@@ -1,316 +1,11 @@
 import { useMemo, useState, useEffect } from 'react';
-import getJoursFeries from 'jours-feries-fr';
-
-const monthNames = [
-  'Janvier',
-  'Février',
-  'Mars',
-  'Avril',
-  'Mai',
-  'Juin',
-  'Juillet',
-  'Août',
-  'Septembre',
-  'Octobre',
-  'Novembre',
-  'Décembre',
-];
-
-// Constants for vacation keywords
-const VACATION_KEYWORDS = {
-  SMALL: ['noël', 'noel', 'hiver', 'printemps', 'toussaint'],
-  SUMMER: ['été', 'ete', 'grandes vacances', "vacances d'été", 'vacances ete'],
-};
-
-// Default vacation ranges for a given year
-function getDefaultVacationRanges(year) {
-  return {
-    noelDebutStart: `${year}-01-01`, 
-    noelDebutEnd: `${year}-01-05`,
-    hiverStart: `${year}-02-12`,
-    hiverEnd: `${year}-02-28`,
-    printempsStart: `${year}-04-16`,
-    printempsEnd: `${year}-05-02`,
-    eteStart: `${year}-07-06`,
-    eteEnd: `${year}-08-31`,
-    toussaintStart: `${year}-10-23`,
-    toussaintEnd: `${year}-11-07`,
-    noelFinStart: `${year}-12-20`,
-    noelFinEnd: `${year}-12-31`,
-  };
-}
-
-// Utility functions for date formatting
-function formatIso(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function parseIso(dateString) {
-  const [year, month, day] = dateString.split('-').map(Number);
-  if (!year || !month || !day) {
-    throw new Error('Date invalide : ' + dateString);
-  }
-  return new Date(Date.UTC(year, month - 1, day));
-}
-
-// Build vacation periods from ranges
-function buildVacationsFromRanges(ranges) {
-  const periodDefinitions = [
-    { name: 'Noël début d\'année', start: ranges.noelDebutStart, end: ranges.noelDebutEnd },
-    { name: 'Vacances d\'hiver', start: ranges.hiverStart, end: ranges.hiverEnd },
-    { name: 'Vacances de printemps', start: ranges.printempsStart, end: ranges.printempsEnd },
-    { name: 'Grandes vacances', start: ranges.eteStart, end: ranges.eteEnd },
-    { name: 'Toussaint', start: ranges.toussaintStart, end: ranges.toussaintEnd },
-    { name: 'Noël fin d\'année', start: ranges.noelFinStart, end: ranges.noelFinEnd },
-  ];
-
-  return periodDefinitions.map((item) => {
-    if (!item.start || !item.end) {
-      throw new Error(`La période ${item.name} doit avoir des dates de début et de fin.`);
-    }
-    const start = formatIso(parseIso(item.start));
-    const end = formatIso(parseIso(item.end));
-    if (start > end) {
-      throw new Error(`La date de début doit précéder la date de fin pour ${item.name}.`);
-    }
-    return {
-      name: item.name,
-      start,
-      end,
-    };
-  });
-}
-
-// Create a set of holidays for a given year
-function createHolidaySet(year) {
-  const holidays = getJoursFeries(year, 'YYYY-MM-DD');
-  return holidays instanceof Set ? holidays : new Set(holidays);
-}
-
-// Calculate Easter Sunday for a given year
-function getEasterSunday(year) {
-  const a = year % 19;
-  const b = Math.floor(year / 100);
-  const c = year % 100;
-  const d = Math.floor(b / 4);
-  const e = b % 4;
-  const f = Math.floor((b + 8) / 25);
-  const g = Math.floor((b - f + 1) / 3);
-  const h = (19 * a + b - d - g + 15) % 30;
-  const i = Math.floor(c / 4);
-  const k = c % 4;
-  const l = (32 + 2 * e + 2 * i - h - k) % 7;
-  const m = Math.floor((a + 11 * h + 22 * l) / 451);
-  const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
-  const day = ((h + l - 7 * m + 114) % 31) + 1;
-  return new Date(Date.UTC(year, month, day));
-}
-
-// Calculate Pentecost Monday for a given year
-function getPentecostMonday(year) {
-  const easter = getEasterSunday(year);
-  const pentecostMonday = new Date(easter);
-  pentecostMonday.setUTCDate(pentecostMonday.getUTCDate() + 50);
-  return formatIso(pentecostMonday);
-}
-
-// Build a year calendar with workdays, holidays, and vacations
-function buildYearCalendar(year, vacations) {
-  const holidaySet = createHolidaySet(year);
-  const calendar = [];
-  const firstDay = new Date(Date.UTC(year, 0, 1));
-  const lastDay = new Date(Date.UTC(year, 11, 31));
-
-  for (let date = new Date(firstDay); date <= lastDay; date.setUTCDate(date.getUTCDate() + 1)) {
-    const iso = formatIso(date);
-    const day = date.getUTCDay();
-    const isWeekend = day === 0 || day === 6;
-    const isHoliday = holidaySet.has(iso);
-    const inVacation = vacations.some((vacation) => iso >= vacation.start && iso <= vacation.end);
-    const isWednesdayRest = day === 3 && !inVacation;
-    const isWorkday = !isWeekend && !isHoliday && !isWednesdayRest;
-    const defaultHours = isWorkday ? (inVacation ? 7 : 9.25) : 0;
-
-    calendar.push({
-      date: iso,
-      month: date.getUTCMonth(),
-      isWeekend,
-      isHoliday,
-      inVacation,
-      isWednesdayRest,
-      isWorkday,
-      defaultHours,
-      vacationName: vacations.find((vacation) => iso >= vacation.start && iso <= vacation.end)?.name || null,
-      isCp: false,
-      isRtt: false,
-    });
-  }
-
-  return calendar;
-}
-
-// Find vacation periods matching specific keywords
-function findVacationPeriods(vacations, keywords) {
-  return vacations.filter((vacation) =>
-    keywords.some((keyword) => vacation.name.toLowerCase().includes(keyword)),
-  );
-}
-
-// Allocate leave days (CP and RTT) based on vacation periods
-function allocateLeave(calendar, vacations) {
-  const cpDates = new Set();
-  const rttDates = new Set();
-
-  function allocateDays(periods, count) {
-    const allocations = [];
-    periods.forEach((period) => {
-      const candidates = calendar.filter(
-        (day) =>
-          day.month !== 0 &&
-          day.date >= period.start &&
-          day.date <= period.end &&
-          day.isWorkday &&
-          !cpDates.has(day.date) &&
-          !rttDates.has(day.date),
-      );
-      for (let i = 0; i < Math.min(count, candidates.length); i += 1) {
-        allocations.push(candidates[i].date);
-      }
-    });
-    return allocations;
-  }
-
-  const smallVacations = findVacationPeriods(vacations, VACATION_KEYWORDS.SMALL);
-  const summerVacations = findVacationPeriods(vacations, VACATION_KEYWORDS.SUMMER);
-
-  const smallAllocation = allocateDays(smallVacations, 5);
-  smallAllocation.forEach((date) => cpDates.add(date));
-
-  const summerAllocation = allocateDays(summerVacations, 5);
-  summerAllocation.forEach((date) => cpDates.add(date));
-
-  const year = calendar.length ? Number(calendar[0].date.slice(0, 4)) : null;
-  if (year) {
-    const pentecostMondayDate = getPentecostMonday(year);
-    if (pentecostMondayDate && !cpDates.has(pentecostMondayDate)) {
-      rttDates.add(pentecostMondayDate);
-    }
-  }
-
-  const summerVacationDates = new Set(
-    calendar
-      .filter((day) =>
-        summerVacations.some(
-          (period) => day.date >= period.start && day.date <= period.end,
-        ),
-      )
-      .map((day) => day.date),
-  );
-
-  const summerCpDates = new Set(
-    calendar
-      .filter(
-        (day) =>
-          cpDates.has(day.date) &&
-          summerVacationDates.has(day.date),
-      )
-      .map((day) => day.date),
-  );
-
-  const remainingRttCandidates = calendar
-    .filter(
-      (day) =>
-        day.inVacation &&
-        day.isWorkday &&
-        !cpDates.has(day.date) &&
-        !rttDates.has(day.date),
-    )
-    .map((day) => {
-      const minDistanceToSummerCp = [...summerCpDates].reduce((min, cpDate) => {
-        const distance = Math.abs(
-          new Date(day.date).getTime() - new Date(cpDate).getTime(),
-        );
-        return Math.min(min, distance);
-      }, Infinity);
-      return {
-        day,
-        priority:
-          summerVacationDates.has(day.date) && summerCpDates.size > 0
-            ? minDistanceToSummerCp
-            : Infinity,
-      };
-    })
-    .sort((a, b) => a.priority - b.priority)
-    .map((entry) => entry.day);
-
-  const remainingRttCount = 9 - rttDates.size;
-  remainingRttCandidates.slice(0, remainingRttCount).forEach((day) => rttDates.add(day.date));
-
-  const remainingCpCount = 25 - cpDates.size;
-  if (remainingCpCount > 0) {
-    const extraCandidates = calendar.filter(
-      (day) =>
-        day.inVacation &&
-        day.isWorkday &&
-        !cpDates.has(day.date) &&
-        !rttDates.has(day.date),
-    );
-    extraCandidates.slice(0, remainingCpCount).forEach((day) => cpDates.add(day.date));
-  }
-
-  const allDates = calendar.map((day) => ({
-    ...day,
-    isCp: cpDates.has(day.date),
-    isRtt: rttDates.has(day.date),
-    effectiveHours: cpDates.has(day.date) || rttDates.has(day.date) ? 0 : day.defaultHours,
-  }));
-
-  return {
-    calendar: allDates,
-    cpDates,
-    rttDates,
-  };
-}
-
-// Allocate training hours across workdays
-function allocateTraining(calendar, trainingByMonth) {
-  const enriched = calendar.map((day) => ({ ...day, trainingHours: 0 }));
-
-  monthNames.forEach((_, monthIndex) => {
-    const total = Number(trainingByMonth[monthIndex] || 0);
-    const workdays = enriched.filter(
-      (day) => day.month === monthIndex && day.isWorkday && !day.isCp && !day.isRtt,
-    );
-    if (!workdays.length || total <= 0) {
-      return;
-    }
-
-    const perDay = Number((total / workdays.length).toFixed(2));
-    let assigned = 0;
-
-    workdays.forEach((day, index) => {
-      if (index === workdays.length - 1) {
-        day.trainingHours = Number((total - assigned).toFixed(2));
-      } else {
-        day.trainingHours = perDay;
-        assigned += perDay;
-      }
-    });
-  });
-
-  return enriched;
-}
-
-// Determine the CSS class for a calendar cell
-function getCalendarCellClass(day, defaultClass) {
-  if (day.isWednesdayRest) {
-    return 'wednesday-rest-cell';
-  }
-  if (day.isWeekend || day.isHoliday) {
-    return 'offday-cell';
-  }
-  return defaultClass;
-}
+import { monthNames, VACATION_KEYWORDS, getDefaultVacationRanges } from './utils/constants';
+import { formatIso, parseIso, getPentecostMonday } from './utils/date';
+import { buildVacationsFromRanges, createHolidaySet, findVacationPeriods } from './services/vacations';
+import { buildYearCalendar, getCalendarCellClass } from './services/calendar';
+import { allocateLeave } from './services/leave';
+import { allocateTraining } from './services/training';
+import { fetchSchoolVacations, adjustVacationDates } from './services/api';
 
 function App() {
   const [year, setYear] = useState(2026);
@@ -320,60 +15,31 @@ function App() {
   const [trainingByMonth, setTrainingByMonth] = useState(Array.from({ length: 12 }, () => 0));
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Fetch school vacations from API
-  useEffect(() => {
-    setLoadingVacations(true);
-    fetch(`/api/vacations/${year}`)
-      .then(res => res.json())
-      .then(data => {
-        setVacationSource(data.source || null);
-        if (data.vacations) {
-          const filteredVacations = data.vacations.filter((vacation) =>
-    vacation.name?.toLowerCase().includes('vacances')
-  );
-          // Adjust vacation dates: start on Saturday and end on Sunday
-          const adjustedVacations = filteredVacations.map((vacation) => {
-            const startDate = new Date(vacation.start + 'T00:00:00Z');
-            const endDate = new Date(vacation.end + 'T00:00:00Z');
-
-            // For December Christmas, always end on December 31st
-            const isNoelDecember = /no[eën]l/i.test(vacation.name) && 
-                                   startDate.getUTCMonth() === 11;
-
-            let adjustedStart = new Date(startDate);
-            let adjustedEnd = new Date(endDate);
-
-            if (!isNoelDecember) {
-              // Find the Saturday before or equal to the start date
-              const dayOfWeekStart = startDate.getUTCDay();
-              const daysBackToSaturday =
-                dayOfWeekStart === 6 ? 0 : ((dayOfWeekStart + 1) % 7);
-
-              adjustedStart.setUTCDate(
-                adjustedStart.getUTCDate() - daysBackToSaturday
-              );
-            } else {
-              // For December Christmas, always end on December 31st
-              adjustedEnd.setUTCFullYear(year, 11, 31);
-            }
-
-            return {
-              name: vacation.name,
-              start: formatIso(adjustedStart),
-              end: formatIso(adjustedEnd),
-            };
-          });
-          setVacations(adjustedVacations);
-        }
-        setLoadingVacations(false);
-      })
-      .catch(error => {
-        console.error('Erreur lors du chargement des vacances:', error);
-        setVacations([]);
+    // Fetch school vacations from API
+    useEffect(() => {
+      const loadVacations = async () => {
+        setLoadingVacations(true);
+        try {
+          const data = await fetchSchoolVacations(year);
+          setVacationSource(data.source || null);
+          if (data.vacations) {
+            const filteredVacations = data.vacations.filter((vacation) =>
+              vacation.name?.toLowerCase().includes('vacances')
+            );
+            const adjustedVacations = adjustVacationDates(filteredVacations, year);
+            setVacations(adjustedVacations);
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement des vacances:', error);
+          setVacations([]);
           setVacationSource(null);
-        setLoadingVacations(false);
-      });
-  }, [year]);
+        } finally {
+          setLoadingVacations(false);
+        }
+      };
+
+      loadVacations();
+    }, [year]);
 
   const calendarInfo = useMemo(() => {
     if (!vacations.length) {
