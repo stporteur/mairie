@@ -6,6 +6,7 @@ import { buildYearCalendar, getCalendarCellClass } from './services/calendar';
 import { allocateLeave } from './services/leave';
 import { allocateTraining } from './services/training';
 import { fetchSchoolVacations, adjustVacationDates } from './services/api';
+import VacationDisplay from './components/VacationDisplay';
 
 function App() {
   const [year, setYear] = useState(2026);
@@ -15,31 +16,17 @@ function App() {
   const [trainingByMonth, setTrainingByMonth] = useState(Array.from({ length: 12 }, () => 0));
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    // Fetch school vacations from API
-    useEffect(() => {
-      const loadVacations = async () => {
-        setLoadingVacations(true);
-        try {
-          const data = await fetchSchoolVacations(year);
-          setVacationSource(data.source || null);
-          if (data.vacations) {
-            const filteredVacations = data.vacations.filter((vacation) =>
-              vacation.name?.toLowerCase().includes('vacances')
-            );
-            const adjustedVacations = adjustVacationDates(filteredVacations, year);
-            setVacations(adjustedVacations);
-          }
-        } catch (error) {
-          console.error('Erreur lors du chargement des vacances:', error);
-          setVacations([]);
-          setVacationSource(null);
-        } finally {
-          setLoadingVacations(false);
-        }
-      };
+    const handleVacationsLoaded = (vacations) => {
+      setVacations(vacations);
+    };
 
-      loadVacations();
-    }, [year]);
+    const handleLoadingChange = (loading) => {
+      setLoadingVacations(loading);
+    };
+
+    const handleYearChange = (newYear) => {
+      setYear(newYear);
+    };
 
   const calendarInfo = useMemo(() => {
     if (!vacations.length) {
@@ -118,75 +105,13 @@ function App() {
           </div>
         </header>
 
-        <section className="config-panel">
-          <div className="card">
-            <h2>Vacances scolaires</h2>
-            <div className="field-row">
-              <label>
-                Année
-                <input
-                  type="number"
-                  min="2020"
-                  max="2050"
-                  value={year}
-                  onChange={(event) => setYear(Number(event.target.value) || 2026)}
-                />
-              </label>
-            </div>
-            {loadingVacations ? (
-              <p>Chargement des vacances scolaires...</p>
-            ) : vacations.length > 0 ? (
-              <div className="vacation-display">
-                <p>Vacances scolaires zone C pour {year}:</p>
-                <ul className="vacation-list">
-                  {vacations.map((period, index) => (
-                    <li key={index} className="vacation-item">
-  <strong>{period.name}</strong>
-
-  <input
-    type="date"
-    value={period.start}
-    onChange={(e) => {
-      const next = [...vacations];
-      next[index] = { ...next[index], start: e.target.value.slice(0, 10), };
-      setVacations(next);
-    }}
-  />
-
-  <span>au</span>
-
-  <input
-    type="date"
-    value={period.end}
-    onChange={(e) => {
-      const next = [...vacations];
-      next[index] = { ...next[index], end: e.target.value };
-      setVacations(next);
-    }}
-  />
-</li>
-                
-
-                  ))}
-                </ul>
-                  {vacationSource ? (
-                    <p className="vacation-source">
-                      Source : {vacationSource.local ? (
-                        'données locales'
-                      ) : (
-                        vacationSource.resource && vacationSource.resource.url ? (
-                          <a href={vacationSource.resource.url} target="_blank" rel="noreferrer">{vacationSource.resource.title || vacationSource.resource.url}</a>
-                        ) : (
-                          <span>{vacationSource.dataset || 'source officielle'}</span>
-                        )
-                      )}
-                    </p>
-                  ) : null}
-              </div>
-            ) : (
-              <p className="alert">Vacances scolaires non disponibles pour {year}</p>
-            )}
-          </div>
+                <section className="config-panel">
+          <VacationDisplay
+            year={year}
+            onVacationsLoaded={handleVacationsLoaded}
+            onLoadingChange={handleLoadingChange}
+            onYearChange={handleYearChange}
+          />
 
           <div className="card">
             <h2>Heures de formation</h2>
