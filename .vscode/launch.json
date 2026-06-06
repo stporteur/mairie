@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Start Full Stack",
+      "configurations": ["React Client", "Node Server"]
+    }
+  ],
+  "configurations": [
+    {
+      "name": "React Client",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/client",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Node Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "nodemon",
+      "program": "${workspaceFolder}/server/index.js",
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}
