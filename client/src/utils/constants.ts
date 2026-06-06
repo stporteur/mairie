@@ -1,11 +1,11 @@
 // Constants for vacation keywords
 export const VACATION_KEYWORDS = {
-  SMALL: ['noël', 'noel', 'hiver', 'printemps', 'toussaint'],
-  SUMMER: ['été', 'ete', 'grandes vacances', "vacances d'été", 'vacances ete'],
+  SMALL: ['noël', 'noel', 'hiver', 'printemps', 'toussaint'] as const,
+  SUMMER: ['été', 'ete', 'grandes vacances', "vacances d'été", 'vacances ete'] as const,
 };
 
 // Default vacation ranges for a given year
-export function getDefaultVacationRanges(year) {
+export function getDefaultVacationRanges(year: number) {
   return {
     noelDebutStart: `${year}-01-01`, 
     noelDebutEnd: `${year}-01-05`,
@@ -36,4 +36,4 @@ export const monthNames = [
   'Octobre',
   'Novembre',
   'Décembre',
-];
+] as const;

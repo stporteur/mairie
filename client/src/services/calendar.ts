@@ -1,10 +1,24 @@
 import { formatIso } from '../utils/date';
 import { createHolidaySet } from './vacations';
 
+export interface CalendarDay {
+  date: string;
+  month: number;
+  isWeekend: boolean;
+  isHoliday: boolean;
+  inVacation: boolean;
+  isWednesdayRest: boolean;
+  isWorkday: boolean;
+  defaultHours: number;
+  vacationName: string | null;
+  isCp: boolean;
+  isRtt: boolean;
+}
+
 // Build a year calendar with workdays, holidays, and vacations
-export function buildYearCalendar(year, vacations) {
+export function buildYearCalendar(year: number, vacations: { name: string; start: string; end: string }[]): CalendarDay[] {
   const holidaySet = createHolidaySet(year);
-  const calendar = [];
+  const calendar: CalendarDay[] = [];
   const firstDay = new Date(Date.UTC(year, 0, 1));
   const lastDay = new Date(Date.UTC(year, 11, 31));
 
@@ -37,7 +51,7 @@ export function buildYearCalendar(year, vacations) {
 }
 
 // Determine the CSS class for a calendar cell
-export function getCalendarCellClass(day, defaultClass) {
+export function getCalendarCellClass(day: CalendarDay, defaultClass: string): string {
   if (day.isWednesdayRest) {
     return 'wednesday-rest-cell';
   }

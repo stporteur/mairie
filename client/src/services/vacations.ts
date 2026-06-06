@@ -1,8 +1,14 @@
 import { formatIso, parseIso } from '../utils/date';
 import getJoursFeries from 'jours-feries-fr';
 
+export interface VacationPeriod {
+  name: string;
+  start: string;
+  end: string;
+}
+
 // Build vacation periods from ranges
-export function buildVacationsFromRanges(ranges) {
+export function buildVacationsFromRanges(ranges: Record<string, string>): VacationPeriod[] {
   const periodDefinitions = [
     { name: 'Noël début d\'année', start: ranges.noelDebutStart, end: ranges.noelDebutEnd },
     { name: 'Vacances d\'hiver', start: ranges.hiverStart, end: ranges.hiverEnd },
@@ -30,13 +36,13 @@ export function buildVacationsFromRanges(ranges) {
 }
 
 // Create a set of holidays for a given year
-export function createHolidaySet(year) {
+export function createHolidaySet(year: number): Set<string> {
   const holidays = getJoursFeries(year, 'YYYY-MM-DD');
   return holidays instanceof Set ? holidays : new Set(holidays);
 }
 
 // Find vacation periods matching specific keywords
-export function findVacationPeriods(vacations, keywords) {
+export function findVacationPeriods(vacations: VacationPeriod[], keywords: string[]): VacationPeriod[] {
   return vacations.filter((vacation) =>
     keywords.some((keyword) => vacation.name.toLowerCase().includes(keyword)),
   );

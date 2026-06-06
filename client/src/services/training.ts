@@ -1,5 +1,7 @@
+import { CalendarDay } from './calendar';
+
 // Allocate training hours across workdays
-export function allocateTraining(calendar, trainingByMonth) {
+export function allocateTraining(calendar: CalendarDay[], trainingByMonth: number[]): CalendarDay[] {
   const enriched = calendar.map((day) => ({ ...day, trainingHours: 0 }));
 
   trainingByMonth.forEach((_, monthIndex) => {

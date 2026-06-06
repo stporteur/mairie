@@ -1,9 +1,9 @@
 // Utility functions for date formatting
-export function formatIso(date) {
+export function formatIso(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function parseIso(dateString) {
+export function parseIso(dateString: string): Date {
   const [year, month, day] = dateString.split('-').map(Number);
   if (!year || !month || !day) {
     throw new Error('Date invalide : ' + dateString);
@@ -12,7 +12,7 @@ export function parseIso(dateString) {
 }
 
 // Calculate Easter Sunday for a given year
-export function getEasterSunday(year) {
+export function getEasterSunday(year: number): Date {
   const a = year % 19;
   const b = Math.floor(year / 100);
   const c = year % 100;
@@ -31,7 +31,7 @@ export function getEasterSunday(year) {
 }
 
 // Calculate Pentecost Monday for a given year
-export function getPentecostMonday(year) {
+export function getPentecostMonday(year: number): string {
   const easter = getEasterSunday(year);
   const pentecostMonday = new Date(easter);
   pentecostMonday.setUTCDate(pentecostMonday.getUTCDate() + 50);

@@ -2,9 +2,32 @@ import { useState, useEffect } from 'react';
 import { fetchSchoolVacations, adjustVacationDates } from '../services/api';
 import { formatIso } from '../utils/date';
 
-function VacationDisplay({ year, onVacationsLoaded, onLoadingChange }) {
-  const [vacations, setVacations] = useState([]);
-  const [vacationSource, setVacationSource] = useState(null);
+interface VacationPeriod {
+  name: string;
+  start: string;
+  end: string;
+}
+
+interface VacationSource {
+  local?: boolean;
+  dataset?: string;
+  resource?: {
+    id?: string;
+    title?: string;
+    url?: string;
+  };
+}
+
+interface VacationDisplayProps {
+  year: number;
+  onVacationsLoaded: (vacations: VacationPeriod[]) => void;
+  onLoadingChange: (loading: boolean) => void;
+  onYearChange: (year: number) => void;
+}
+
+function VacationDisplay({ year, onVacationsLoaded, onLoadingChange, onYearChange }: VacationDisplayProps) {
+  const [vacations, setVacations] = useState<VacationPeriod[]>([]);
+  const [vacationSource, setVacationSource] = useState<VacationSource | null>(null);
 
   useEffect(() => {
     const loadVacations = async () => {
@@ -35,7 +58,7 @@ function VacationDisplay({ year, onVacationsLoaded, onLoadingChange }) {
     loadVacations();
   }, [year, onVacationsLoaded, onLoadingChange]);
 
-  const handleVacationChange = (index, field, value) => {
+  const handleVacationChange = (index: number, field: string, value: string) => {
     const next = [...vacations];
     next[index] = { ...next[index], [field]: value };
     setVacations(next);

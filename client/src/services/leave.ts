@@ -1,14 +1,21 @@
 import { getPentecostMonday } from '../utils/date';
 import { findVacationPeriods } from './vacations';
 import { VACATION_KEYWORDS } from '../utils/constants';
+import { CalendarDay } from './calendar';
+
+export interface LeaveAllocation {
+  calendar: CalendarDay[];
+  cpDates: Set<string>;
+  rttDates: Set<string>;
+}
 
 // Allocate leave days (CP and RTT) based on vacation periods
-export function allocateLeave(calendar, vacations) {
-  const cpDates = new Set();
-  const rttDates = new Set();
+export function allocateLeave(calendar: CalendarDay[], vacations: { name: string; start: string; end: string }[]): LeaveAllocation {
+  const cpDates = new Set<string>();
+  const rttDates = new Set<string>();
 
-  function allocateDays(periods, count) {
-    const allocations = [];
+  function allocateDays(periods: { name: string; start: string; end: string }[], count: number): string[] {
+    const allocations: string[] = [];
     periods.forEach((period) => {
       const candidates = calendar.filter(
         (day) =>
