@@ -16,6 +16,13 @@ const monthNames = [
   'Décembre',
 ];
 
+// Constants for vacation keywords
+const VACATION_KEYWORDS = {
+  SMALL: ['noël', 'noel', 'hiver', 'printemps', 'toussaint'],
+  SUMMER: ['été', 'ete', 'grandes vacances', "vacances d'été", 'vacances ete'],
+};
+
+// Default vacation ranges for a given year
 function getDefaultVacationRanges(year) {
   return {
     noelDebutStart: `${year}-01-01`, 
@@ -33,9 +40,7 @@ function getDefaultVacationRanges(year) {
   };
 }
 
-const smallVacationKeywords = ['noël', 'noel', 'hiver', 'printemps', 'toussaint'];
-const summerVacationKeywords = ['été', 'ete', 'grandes vacances', "vacances d'été", 'vacances ete'];
-
+// Utility functions for date formatting
 function formatIso(date) {
   return date.toISOString().slice(0, 10);
 }
@@ -48,6 +53,7 @@ function parseIso(dateString) {
   return new Date(Date.UTC(year, month - 1, day));
 }
 
+// Build vacation periods from ranges
 function buildVacationsFromRanges(ranges) {
   const periodDefinitions = [
     { name: 'Noël début d\'année', start: ranges.noelDebutStart, end: ranges.noelDebutEnd },
@@ -75,11 +81,13 @@ function buildVacationsFromRanges(ranges) {
   });
 }
 
+// Create a set of holidays for a given year
 function createHolidaySet(year) {
   const holidays = getJoursFeries(year, 'YYYY-MM-DD');
   return holidays instanceof Set ? holidays : new Set(holidays);
 }
 
+// Calculate Easter Sunday for a given year
 function getEasterSunday(year) {
   const a = year % 19;
   const b = Math.floor(year / 100);
@@ -98,6 +106,7 @@ function getEasterSunday(year) {
   return new Date(Date.UTC(year, month, day));
 }
 
+// Calculate Pentecost Monday for a given year
 function getPentecostMonday(year) {
   const easter = getEasterSunday(year);
   const pentecostMonday = new Date(easter);
@@ -105,6 +114,7 @@ function getPentecostMonday(year) {
   return formatIso(pentecostMonday);
 }
 
+// Build a year calendar with workdays, holidays, and vacations
 function buildYearCalendar(year, vacations) {
   const holidaySet = createHolidaySet(year);
   const calendar = [];
@@ -139,12 +149,14 @@ function buildYearCalendar(year, vacations) {
   return calendar;
 }
 
+// Find vacation periods matching specific keywords
 function findVacationPeriods(vacations, keywords) {
   return vacations.filter((vacation) =>
     keywords.some((keyword) => vacation.name.toLowerCase().includes(keyword)),
   );
 }
 
+// Allocate leave days (CP and RTT) based on vacation periods
 function allocateLeave(calendar, vacations) {
   const cpDates = new Set();
   const rttDates = new Set();
@@ -168,8 +180,8 @@ function allocateLeave(calendar, vacations) {
     return allocations;
   }
 
-  const smallVacations = findVacationPeriods(vacations, smallVacationKeywords);
-  const summerVacations = findVacationPeriods(vacations, summerVacationKeywords);
+  const smallVacations = findVacationPeriods(vacations, VACATION_KEYWORDS.SMALL);
+  const summerVacations = findVacationPeriods(vacations, VACATION_KEYWORDS.SUMMER);
 
   const smallAllocation = allocateDays(smallVacations, 5);
   smallAllocation.forEach((date) => cpDates.add(date));
@@ -260,6 +272,7 @@ function allocateLeave(calendar, vacations) {
   };
 }
 
+// Allocate training hours across workdays
 function allocateTraining(calendar, trainingByMonth) {
   const enriched = calendar.map((day) => ({ ...day, trainingHours: 0 }));
 
@@ -288,6 +301,7 @@ function allocateTraining(calendar, trainingByMonth) {
   return enriched;
 }
 
+// Determine the CSS class for a calendar cell
 function getCalendarCellClass(day, defaultClass) {
   if (day.isWednesdayRest) {
     return 'wednesday-rest-cell';
@@ -306,7 +320,7 @@ function App() {
   const [trainingByMonth, setTrainingByMonth] = useState(Array.from({ length: 12 }, () => 0));
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Récupérer les vacances scolaires depuis l'API
+  // Fetch school vacations from API
   useEffect(() => {
     setLoadingVacations(true);
     fetch(`/api/vacations/${year}`)
@@ -317,12 +331,12 @@ function App() {
           const filteredVacations = data.vacations.filter((vacation) =>
     vacation.name?.toLowerCase().includes('vacances')
   );
-          // Ajuster les dates : vacances commencent un samedi et se terminent un dimanche
+          // Adjust vacation dates: start on Saturday and end on Sunday
           const adjustedVacations = filteredVacations.map((vacation) => {
             const startDate = new Date(vacation.start + 'T00:00:00Z');
             const endDate = new Date(vacation.end + 'T00:00:00Z');
 
-            // Pour Noël en décembre, on garde toujours jusqu'au 31 décembre
+            // For December Christmas, always end on December 31st
             const isNoelDecember = /no[eën]l/i.test(vacation.name) && 
                                    startDate.getUTCMonth() === 11;
 
@@ -330,7 +344,7 @@ function App() {
             let adjustedEnd = new Date(endDate);
 
             if (!isNoelDecember) {
-              // Trouver le samedi avant ou égal à la date de début
+              // Find the Saturday before or equal to the start date
               const dayOfWeekStart = startDate.getUTCDay();
               const daysBackToSaturday =
                 dayOfWeekStart === 6 ? 0 : ((dayOfWeekStart + 1) % 7);
@@ -339,7 +353,7 @@ function App() {
                 adjustedStart.getUTCDate() - daysBackToSaturday
               );
             } else {
-              // Pour Noël en décembre, toujours jusqu'au 31 décembre
+              // For December Christmas, always end on December 31st
               adjustedEnd.setUTCFullYear(year, 11, 31);
             }
 
@@ -486,6 +500,7 @@ function App() {
   />
 </li>
                 
+
                   ))}
                 </ul>
                   {vacationSource ? (
