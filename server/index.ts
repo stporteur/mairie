@@ -1,14 +1,29 @@
-const path = require('path');
-const express = require('express');
+import path from 'path';
+import express, { Express, Request, Response } from 'express';
+import { getOfficialVacations } from './officialHolidays';
 
-const app = express();
-const port = process.env.PORT || 4000;
-const clientDist = path.resolve(__dirname, '../client/dist');
+const app: Express = express();
+const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
+const clientDist: string = path.resolve(__dirname, '../client/dist');
 
-// Vacances scolaires officielles zone C (Paris) par année
-const { getOfficialVacations } = require('./officialHolidays');
+interface VacationPeriod {
+  name: string;
+  start: string;
+  end: string;
+}
 
-const vacationsByYear = {
+interface VacationsByYear {
+  [year: number]: VacationPeriod[];
+}
+
+interface ApiResponse {
+  year: number;
+  zone: string;
+  vacations: VacationPeriod[];
+  source: any;
+}
+
+const vacationsByYear: VacationsByYear = {
   2026: [
     { name: 'Noël fin d\'année', start: '2026-01-01', end: '2026-01-05' },
     { name: 'Vacances d\'hiver', start: '2026-02-21', end: '2026-03-09' },
@@ -37,28 +52,34 @@ const vacationsByYear = {
 
 app.use(express.static(clientDist));
 
-app.get('/api/status', (req, res) => {
+app.get('/api/status', (req: Request, res: Response) => {
   res.json({ status: 'ok', app: 'Planning ATSEM', city: "Marie de L'Haÿ-les-Roses" });
 });
 
-app.get('/api/vacations/:year', (req, res) => {
-  const year = parseInt(req.params.year, 10);
+app.get('/api/vacations/:year', (req: Request, res: Response) => {
+  const year: number = parseInt(req.params.year as string, 10);
   // Try official source first, then fallback to local data
-  getOfficialVacations().then(official => {
+  getOfficialVacations().then((official: any) => {
     if (official && official.years && official.years[year]) {
       // official.years[year] may provide zones; try zone C first
       const yData = official.years[year];
-      if (yData.C) return res.json({ year, zone: 'C', vacations: yData.C, source: official.source });
-      // If structure is different, try to return something sensible
-      if (Array.isArray(yData)) return res.json({ year, zone: 'C', vacations: yData, source: official.source });
+      let vacations: any;
+      if (yData.C) {
+        vacations = yData.C;
+      } else if (Array.isArray(yData)) {
+        vacations = yData;
+      }
+      if (vacations) {
+        return res.json({ year, zone: 'C', vacations, source: official.source });
+      }
     }
-    const vacations = vacationsByYear[year];
+    const vacations: VacationPeriod[] | undefined = vacationsByYear[year];
     if (!vacations) {
       return res.status(404).json({ error: `Vacances scolaires non disponibles pour l'année ${year}` });
     }
     res.json({ year, zone: 'C', vacations, source: { local: true } });
   }).catch(() => {
-    const vacations = vacationsByYear[year];
+    const vacations: VacationPeriod[] | undefined = vacationsByYear[year];
     if (!vacations) {
       return res.status(404).json({ error: `Vacances scolaires non disponibles pour l'année ${year}` });
     }
@@ -66,10 +87,11 @@ app.get('/api/vacations/:year', (req, res) => {
   });
 });
 
-app.get('*', (req, res) => {
+app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
 app.listen(port, () => {
   console.log(`Portail applicatif démarré sur http://localhost:${port}`);
 });
+

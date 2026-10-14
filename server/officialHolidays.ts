@@ -1,36 +1,60 @@
 // Lightweight fetcher for official school vacations from data.gouv.fr
 // Attempts to find a dataset mentioning "vacances scolaires" and use a JSON resource if available.
 
-const DEFAULT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+const DEFAULT_CACHE_TTL: number = 24 * 60 * 60 * 1000; // 24h
 
-let cache = { ts: 0, data: null };
+interface Cache {
+  ts: number;
+  data: any;
+}
+let cache: Cache = { ts: 0, data: null };
 
-async function fetchJson(url) {
-  const f = globalThis.fetch || (await import('node-fetch')).default;
-  const res = await f(url);
+interface Resource {
+  latest: string | undefined;
+  format: string;
+  id?: string;
+  title?: string;
+  url?: string;
+}
+
+interface Dataset {
+  page?: string;
+  uri?: string;
+  slug?: string;
+  resources?: Resource[];
+}
+
+interface VacationPeriod {
+  date: string;
+  zoneC: boolean;
+  name?: string;
+}
+async function fetchJson(url: string): Promise<any> {
+  if (!globalThis.fetch) throw new Error('Fetch is not available');
+  const res = await globalThis.fetch(url);
   if (!res.ok) throw new Error(`Fetch ${url} failed: ${res.status}`);
   return res.json();
 }
 
-async function fetchDataGouvDatasets() {
+async function fetchDataGouvDatasets(): Promise<any> {
   const q = encodeURIComponent('vacances scolaires calendrier scolaire');
   const url = `https://www.data.gouv.fr/api/1/datasets/?q=${q}&rows=10`;
   return fetchJson(url);
 }
 
-async function fetchDatasetBySlug(slug) {
+async function fetchDatasetBySlug(slug: string): Promise<any> {
   const url = `https://www.data.gouv.fr/api/1/datasets/${slug}/`;
   return fetchJson(url);
 }
 
-function normalizeVacationsFromResource(obj) {
+function normalizeVacationsFromResource(obj: any): any {
   // Expecting an object mapping years to zones/resources, but datasets vary.
   // Try common shapes: {"2026": {"C": [...]}} or array of {year, zone, start, end}
   if (!obj) return null;
   if (obj.years) return obj.years;
   if (typeof obj === 'object') {
     // If keys are years
-    const years = {};
+    const years: any = {};
     let foundYear = false;
     Object.keys(obj).forEach(k => {
       if (/^\d{4}$/.test(k)) {
@@ -43,15 +67,16 @@ function normalizeVacationsFromResource(obj) {
   return null;
 }
 
-async function loadOfficialData() {
+async function loadOfficialData(): Promise<any> {
   // Prefer the official DILA simulateur dataset when available
   try {
-    const ds = await fetchDatasetBySlug('simulateur-calendrier-des-vacances-scolaires');
+    const ds: Dataset = await fetchDatasetBySlug('simulateur-calendrier-des-vacances-scolaires');
     if (ds && ds.resources) {
       for (const r of ds.resources) {
         const format = (r.format || '').toLowerCase();
         if (format.includes('json') || (r.title && r.title.toLowerCase().includes('donnees')) ) {
           const fetchUrl = r.latest || r.url || r['latest'];
+          if (!fetchUrl) continue;
           try {
             const obj = await fetchJson(fetchUrl);
             const years = normalizeVacationsFromResource(obj);
@@ -70,11 +95,12 @@ async function loadOfficialData() {
 
   // Try the well-known "vacances-scolaires-par-zones" dataset (CSV on GitHub)
   try {
-    const ds2 = await fetchDatasetBySlug('vacances-scolaires-par-zones');
+    const ds2: Dataset = await fetchDatasetBySlug('vacances-scolaires-par-zones');
     if (ds2 && ds2.resources) {
       for (const r of ds2.resources) {
         const format = (r.format || '').toLowerCase();
         if (format.includes('csv') || (r.url && r.url.includes('raw.githubusercontent.com'))) {
+          if (!r.url) continue;
           const csvUrl = r.url;
           const parsed = await fetchAndParseVacancesCsv(csvUrl);
           if (parsed && Object.keys(parsed).length) {
@@ -111,20 +137,21 @@ async function loadOfficialData() {
   return null;
 }
 
-async function fetchAndParseVacancesCsv(url) {
+async function fetchAndParseVacancesCsv(url: string): Promise<any> {
   try {
-    const f = globalThis.fetch || (await import('node-fetch')).default;
-    const res = await f(url);
+    if (!globalThis.fetch) throw new Error('Fetch is not available');
+    const res = await globalThis.fetch(url);
     if (!res.ok) throw new Error('CSV fetch failed');
     const text = await res.text();
     const lines = text.split(/\r?\n/).filter(Boolean);
-    const header = lines.shift().split(',').map(h => h.trim());
+    const header = lines.shift()?.split(',').map(h => h.trim());
+    if (!header) return null;
     const idxDate = header.indexOf('date');
     const idxZoneC = header.indexOf('vacances_zone_c');
     const idxName = header.indexOf('nom_vacances');
     if (idxDate === -1 || idxZoneC === -1) return null;
 
-    const years = {};
+    const years: any = {};
     for (const line of lines) {
       const cols = line.split(',');
       const date = cols[idxDate];
@@ -137,15 +164,15 @@ async function fetchAndParseVacancesCsv(url) {
     }
 
     // Convert per-day entries to contiguous periods
-    const result = {};
+    const result: any = {};
     Object.keys(years).forEach((y) => {
-      const days = years[y].sort((a, b) => a.date.localeCompare(b.date));
-      const periods = [];
+      const days = years[y].sort((a: any, b: any) => a.date.localeCompare(b.date));
+      const periods: any[] = [];
       let inPeriod = false;
-      let periodStart = null;
+      let periodStart: string | null = null;
       let periodName = '';
-      let prevDate = null;
-      days.forEach((d) => {
+      let prevDate: string | null = null;
+      days.forEach((d: any) => {
         if (d.zoneC) {
           if (!inPeriod) {
             inPeriod = true;
@@ -173,7 +200,7 @@ async function fetchAndParseVacancesCsv(url) {
   }
 }
 
-async function getOfficialVacations() {
+async function getOfficialVacations(): Promise<any> {
   const now = Date.now();
   if (cache.data && (now - cache.ts) < DEFAULT_CACHE_TTL) return cache.data;
   const data = await loadOfficialData();
@@ -184,4 +211,5 @@ async function getOfficialVacations() {
   return null;
 }
 
-module.exports = { getOfficialVacations };
+export { getOfficialVacations };
+
