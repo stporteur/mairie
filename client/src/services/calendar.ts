@@ -15,9 +15,36 @@ export interface CalendarDay {
   isRtt: boolean;
 }
 
+function getSchoolHoursByWeekday(schoolWeeklyHours: number): Map<number, number> {
+  const totalQuarterHours = Math.round(schoolWeeklyHours * 4);
+  const baseQuarterHours = Math.floor(totalQuarterHours / 4);
+  const extraQuarterHours = totalQuarterHours % 4;
+  const quarterHoursByWeekday = new Map<number, number>([
+    [1, baseQuarterHours], // Monday
+    [2, baseQuarterHours], // Tuesday
+    [4, baseQuarterHours], // Thursday
+    [5, baseQuarterHours], // Friday
+  ]);
+  const preferredWeekdays = [2, 4, 1, 5];
+
+  preferredWeekdays.slice(0, extraQuarterHours).forEach((weekday) => {
+    quarterHoursByWeekday.set(weekday, baseQuarterHours + 1);
+  });
+
+  return new Map(
+    [...quarterHoursByWeekday].map(([weekday, quarterHours]) => [weekday, quarterHours / 4]),
+  );
+}
+
 // Build a year calendar with workdays, holidays, and vacations
-export function buildYearCalendar(year: number, vacations: { name: string; start: string; end: string }[]): CalendarDay[] {
+export function buildYearCalendar(
+  year: number,
+  vacations: { name: string; start: string; end: string }[],
+  vacationWeeklyHours = 35,
+  schoolWeeklyHours = 37,
+): CalendarDay[] {
   const holidaySet = createHolidaySet(year);
+  const schoolHoursByWeekday = getSchoolHoursByWeekday(schoolWeeklyHours);
   const calendar: CalendarDay[] = [];
   const firstDay = new Date(Date.UTC(year, 0, 1));
   const lastDay = new Date(Date.UTC(year, 11, 31));
@@ -30,7 +57,9 @@ export function buildYearCalendar(year: number, vacations: { name: string; start
     const inVacation = vacations.some((vacation) => iso >= vacation.start && iso <= vacation.end);
     const isWednesdayRest = day === 3 && !inVacation;
     const isWorkday = !isWeekend && !isHoliday && !isWednesdayRest;
-    const defaultHours = isWorkday ? (inVacation ? 7 : 9.25) : 0;
+    const defaultHours = isWorkday
+      ? (inVacation ? vacationWeeklyHours / 5 : schoolHoursByWeekday.get(day) ?? 0)
+      : 0;
 
     calendar.push({
       date: iso,

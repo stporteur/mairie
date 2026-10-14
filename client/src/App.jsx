@@ -8,6 +8,61 @@ import { allocateTraining } from './services/training';
 import { fetchSchoolVacations, adjustVacationDates } from './services/api';
 import VacationDisplay from './components/VacationDisplay';
 
+const DEFAULT_LEAVE_SETTINGS = {
+  cpDays: 25,
+  rttDays: 9,
+  schoolWeeklyHours: 37,
+  vacationWeeklyHours: 35,
+};
+const LEAVE_SETTINGS_STORAGE_KEY = 'planning-atsem-leave-settings';
+
+function normalizeQuota(value, fallback) {
+  if (value === '') return 0;
+  const quota = Number(value);
+  return Number.isInteger(quota) && quota >= 0 ? quota : fallback;
+}
+
+function normalizeWeeklyHours(value, fallback) {
+  if (value === '') return 0;
+  const hours = Number(value);
+  return Number.isFinite(hours) && hours >= 0 ? hours : fallback;
+}
+
+function normalizeSchoolWeeklyHours(value, fallback) {
+  const hours = Number(value);
+  const quarterHours = hours * 4;
+  return Number.isFinite(hours) && hours >= 0 && hours <= 39 &&
+    Math.abs(quarterHours - Math.round(quarterHours)) <= 1e-8
+    ? hours
+    : fallback;
+}
+
+function readLeaveSettings() {
+  if (typeof window === 'undefined') {
+    return Object.fromEntries(
+      Object.entries(DEFAULT_LEAVE_SETTINGS).map(([key, value]) => [key, String(value)]),
+    );
+  }
+
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(LEAVE_SETTINGS_STORAGE_KEY) || 'null');
+    return Object.fromEntries(
+      Object.entries(DEFAULT_LEAVE_SETTINGS).map(([key, fallback]) => {
+        const value = key === 'cpDays' || key === 'rttDays'
+          ? normalizeQuota(saved?.[key], fallback)
+          : key === 'schoolWeeklyHours'
+            ? normalizeSchoolWeeklyHours(saved?.[key], fallback)
+            : normalizeWeeklyHours(saved?.[key], fallback);
+        return [key, String(value)];
+      }),
+    );
+  } catch {
+    return Object.fromEntries(
+      Object.entries(DEFAULT_LEAVE_SETTINGS).map(([key, value]) => [key, String(value)]),
+    );
+  }
+}
+
 function App() {
   const [year, setYear] = useState(2026);
   const [vacations, setVacations] = useState([]);
@@ -15,6 +70,26 @@ function App() {
   const [loadingVacations, setLoadingVacations] = useState(false);
   const [trainingByMonth, setTrainingByMonth] = useState(Array.from({ length: 12 }, () => 0));
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [leaveSettings, setLeaveSettings] = useState(readLeaveSettings);
+  const [appliedLeaveSettings, setAppliedLeaveSettings] = useState(readLeaveSettings);
+  const [calculationError, setCalculationError] = useState('');
+  const cpQuota = normalizeQuota(appliedLeaveSettings.cpDays, DEFAULT_LEAVE_SETTINGS.cpDays);
+  const rttQuota = normalizeQuota(appliedLeaveSettings.rttDays, DEFAULT_LEAVE_SETTINGS.rttDays);
+  const schoolWeeklyHours = normalizeWeeklyHours(appliedLeaveSettings.schoolWeeklyHours, DEFAULT_LEAVE_SETTINGS.schoolWeeklyHours);
+  const vacationWeeklyHours = normalizeWeeklyHours(appliedLeaveSettings.vacationWeeklyHours, DEFAULT_LEAVE_SETTINGS.vacationWeeklyHours);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LEAVE_SETTINGS_STORAGE_KEY, JSON.stringify({
+        cpDays: cpQuota,
+        rttDays: rttQuota,
+        schoolWeeklyHours,
+        vacationWeeklyHours,
+      }));
+    } catch {
+      // Keep the settings usable if browser storage is unavailable.
+    }
+  }, [cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours]);
 
     const handleVacationsLoaded = (vacations) => {
       setVacations(vacations);
@@ -32,22 +107,27 @@ function App() {
     if (!vacations.length) {
       return null;
     }
-    const calendar = buildYearCalendar(year, vacations);
-    return allocateLeave(calendar, vacations);
-  }, [year, vacations]);
+    const calendar = buildYearCalendar(year, vacations, vacationWeeklyHours, schoolWeeklyHours);
+    return allocateLeave(calendar, vacations, cpQuota, rttQuota);
+  }, [year, vacations, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours]);
 
   const totalTrainingHours = trainingByMonth.reduce((total, value) => total + Number(value || 0), 0);
   const totalWorkHours = calendarInfo
     ? calendarInfo.calendar.reduce((total, day) => total + day.effectiveHours, 0)
     : 0;
+  const hoursDue = 1607 - totalWorkHours;
   const totalHours = Number((totalWorkHours + totalTrainingHours).toFixed(2));
   const cpCount = calendarInfo ? calendarInfo.cpDates.size : 0;
   const rttCount = calendarInfo ? calendarInfo.rttDates.size : 0;
   const totalLeave = cpCount + rttCount;
-  const totalOffWarning = totalLeave !== 34;
+  const expectedLeave = cpQuota + rttQuota;
+  const totalOffWarning = totalLeave !== expectedLeave;
   const hoursWarning = totalHours > 1607;
 
-  const calendarWithTraining = calendarInfo ? allocateTraining(calendarInfo.calendar, trainingByMonth) : [];
+  const calendarWithTraining = useMemo(
+    () => calendarInfo ? allocateTraining(calendarInfo.calendar, trainingByMonth) : [],
+    [calendarInfo, trainingByMonth],
+  );
 
   const monthlySummaries = calendarInfo
   ? monthNames.map((monthName, monthIndex) => {
@@ -70,6 +150,46 @@ function App() {
     setTrainingByMonth(next);
   };
 
+  const handleLeaveSettingChange = (setting, value) => {
+    setLeaveSettings((current) => ({ ...current, [setting]: value }));
+  };
+
+  const handleLeaveSettingBlur = (setting) => {
+    if (setting === 'schoolWeeklyHours') return;
+
+    const fallback = DEFAULT_LEAVE_SETTINGS[setting];
+    setLeaveSettings((current) => ({
+      ...current,
+      [setting]: String(setting === 'cpDays' || setting === 'rttDays'
+        ? normalizeQuota(current[setting], fallback)
+        : normalizeWeeklyHours(current[setting], fallback)),
+    }));
+  };
+
+  const handleCalculate = () => {
+    const schoolHours = Number(leaveSettings.schoolWeeklyHours);
+    const schoolQuarterHours = schoolHours * 4;
+    if (
+      leaveSettings.schoolWeeklyHours.trim() === '' ||
+      !Number.isFinite(schoolHours) ||
+      schoolHours < 0 ||
+      schoolHours > 39 ||
+      Math.abs(schoolQuarterHours - Math.round(schoolQuarterHours)) > 1e-8
+    ) {
+      setCalculationError('Les heures/semaine Scolaire doivent être un multiple de 0,25 h compris entre 0 et 39 h.');
+      return;
+    }
+
+    const nextSettings = {
+      cpDays: String(normalizeQuota(leaveSettings.cpDays, DEFAULT_LEAVE_SETTINGS.cpDays)),
+      rttDays: String(normalizeQuota(leaveSettings.rttDays, DEFAULT_LEAVE_SETTINGS.rttDays)),
+      schoolWeeklyHours: String(normalizeWeeklyHours(leaveSettings.schoolWeeklyHours, DEFAULT_LEAVE_SETTINGS.schoolWeeklyHours)),
+      vacationWeeklyHours: String(normalizeWeeklyHours(leaveSettings.vacationWeeklyHours, DEFAULT_LEAVE_SETTINGS.vacationWeeklyHours)),
+    };
+    setLeaveSettings(nextSettings);
+    setAppliedLeaveSettings(nextSettings);
+    setCalculationError('');
+  };
 
   const monthlyTables = monthNames.map((_, monthIndex) =>
     calendarWithTraining.filter((day) => day.month === monthIndex),
@@ -106,6 +226,64 @@ function App() {
         </header>
 
                 <section className="config-panel">
+          <div className="card">
+            <h2>Paramètres</h2>
+            <div className="month-grid leave-settings-grid">
+              <label className="month-input">
+                <span>Jours de CP</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={leaveSettings.cpDays}
+                  onChange={(event) => handleLeaveSettingChange('cpDays', event.target.value)}
+                  onBlur={() => handleLeaveSettingBlur('cpDays')}
+                />
+              </label>
+              <label className="month-input">
+                <span>Jours de RTT</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={leaveSettings.rttDays}
+                  onChange={(event) => handleLeaveSettingChange('rttDays', event.target.value)}
+                  onBlur={() => handleLeaveSettingBlur('rttDays')}
+                />
+              </label>
+              <label className="month-input">
+                <span>Heures/semaine Scolaire</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={leaveSettings.schoolWeeklyHours}
+                  onChange={(event) => {
+                    handleLeaveSettingChange('schoolWeeklyHours', event.target.value);
+                    setCalculationError('');
+                  }}
+                  onBlur={() => handleLeaveSettingBlur('schoolWeeklyHours')}
+                />
+              </label>
+              <label className="month-input">
+                <span>Heure/semaine Vacances</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={leaveSettings.vacationWeeklyHours}
+                  onChange={(event) => handleLeaveSettingChange('vacationWeeklyHours', event.target.value)}
+                  onBlur={() => handleLeaveSettingBlur('vacationWeeklyHours')}
+                />
+              </label>
+            </div>
+            <p className="help-text">Les paramètres sont appliqués au calendrier uniquement après clic sur « Calculer ».</p>
+            {calculationError && <div className="alert" role="alert">{calculationError}</div>}
+            <button className="primary-button calculate-button" type="button" onClick={handleCalculate}>
+              Calculer
+            </button>
+          </div>
+
           <VacationDisplay
             year={year}
             onVacationsLoaded={handleVacationsLoaded}
@@ -113,57 +291,40 @@ function App() {
             onYearChange={handleYearChange}
           />
 
-          <div className="card">
-            <h2>Heures de formation</h2>
-            <div className="month-grid">
-              {monthNames.map((month, index) => (
-                <label key={month} className="month-input">
-                  <span>{month}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.25"
-                    value={trainingByMonth[index]}
-                    onChange={(event) => handleTrainingChange(index, event.target.value)}
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
-
         </section>
 
         <section className="stats-grid">
-          <article>
-            <h2>{cpCount}</h2>
-            <p>Jours de CP posés</p>
-          </article>
-          <article>
-            <h2>{rttCount}</h2>
-            <p>Jours de RTT posés</p>
-          </article>
-          <article>
-            <h2>{totalLeave}</h2>
-            <p>Congés totaux posés</p>
-          </article>
-          <article>
-            <h2>{totalWorkHours.toFixed(2)}</h2>
-            <p>Heures de travail calculées</p>
-          </article>
-          <article>
-            <h2>{totalTrainingHours.toFixed(2)}</h2>
-            <p>Heures de formation</p>
-          </article>
-          <article>
-            <h2>{totalHours.toFixed(2)}</h2>
-            <p>Total travail + formation</p>
+          <article className="summary-card">
+            <h2 className="summary-title">Récapitulatif</h2>
+            <div className="summary-items">
+              <div className="summary-item">
+                <h3>{cpCount}</h3>
+                <p>Jours de CP posés</p>
+              </div>
+              <div className="summary-item">
+                <h3>{rttCount}</h3>
+                <p>Jours de RTT posés</p>
+              </div>
+              <div className="summary-item">
+                <h3>{totalLeave}</h3>
+                <p>Congés totaux posés</p>
+              </div>
+              <div className="summary-item">
+                <h3>{totalWorkHours.toFixed(2)}</h3>
+                <p>Heures de travail calculées</p>
+              </div>
+              <div className="summary-item">
+                <h3>{hoursDue.toFixed(2)}</h3>
+                <p>Heures dues</p>
+              </div>
+            </div>
           </article>
         </section>
 
         <section className="warnings">
           {totalOffWarning && (
             <div className="alert">
-              Total des congés posés : {totalLeave} jours. Vérifiez que le total soit bien de 34 jours.
+              Total des congés posés : {totalLeave} jours. Le total attendu selon vos réglages est de {expectedLeave} jours.
             </div>
           )}
           {hoursWarning && (
@@ -181,7 +342,7 @@ function App() {
                 <table className="month-calendar">
                   <thead>
                     <tr>
-                      <th rowSpan="2">Jour</th>
+                      <th rowSpan="2" aria-label="Jour" title="Jour">J</th>
                       {days.map((day) => {
                         const headerClass = day.inVacation ? 'vacation-day-header' : '';
                         const dayInitial = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'][new Date(`${day.date}T00:00:00Z`).getUTCDay()];
@@ -205,7 +366,7 @@ function App() {
                   </thead>
                   <tbody>
                     <tr>
-                      <th>Heures travail</th>
+                      <th aria-label="Heures travail" title="Heures travail">T</th>
                       {days.map((day) => {
                         let cellClass = '';
                         if (day.inVacation) {
@@ -222,7 +383,7 @@ function App() {
                       })}
                     </tr>
                     <tr>
-                      <th>Formation</th>
+                      <th aria-label="Formation" title="Formation">F</th>
                       {days.map((day) => {
                         let cellClass = '';
                         if (day.inVacation) {
@@ -239,7 +400,7 @@ function App() {
                       })}
                     </tr>
                     <tr>
-                      <th>Congés</th>
+                      <th aria-label="Congés" title="Congés">C</th>
                       {days.map((day) => {
                         let cellClass = '';
                         if (day.inVacation) {

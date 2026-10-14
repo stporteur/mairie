@@ -10,11 +10,22 @@ export interface LeaveAllocation {
 }
 
 // Allocate leave days (CP and RTT) based on vacation periods
-export function allocateLeave(calendar: CalendarDay[], vacations: { name: string; start: string; end: string }[]): LeaveAllocation {
+export function allocateLeave(
+  calendar: CalendarDay[],
+  vacations: { name: string; start: string; end: string }[],
+  cpTarget = 25,
+  rttTarget = 9,
+): LeaveAllocation {
   const cpDates = new Set<string>();
   const rttDates = new Set<string>();
+  const cpQuota = Number.isFinite(cpTarget) ? Math.max(0, Math.floor(cpTarget)) : 25;
+  const rttQuota = Number.isFinite(rttTarget) ? Math.max(0, Math.floor(rttTarget)) : 9;
 
-  function allocateDays(periods: { name: string; start: string; end: string }[], count: number): string[] {
+  function allocateDays(
+    periods: { name: string; start: string; end: string }[],
+    count: number,
+    maxTotal = Number.POSITIVE_INFINITY,
+  ): string[] {
     const allocations: string[] = [];
     periods.forEach((period) => {
       const candidates = calendar.filter(
@@ -26,7 +37,8 @@ export function allocateLeave(calendar: CalendarDay[], vacations: { name: string
           !cpDates.has(day.date) &&
           !rttDates.has(day.date),
       );
-      for (let i = 0; i < Math.min(count, candidates.length); i += 1) {
+      const daysToAllocate = Math.min(count, candidates.length, maxTotal - allocations.length);
+      for (let i = 0; i < daysToAllocate; i += 1) {
         allocations.push(candidates[i].date);
       }
     });
@@ -36,14 +48,14 @@ export function allocateLeave(calendar: CalendarDay[], vacations: { name: string
   const smallVacations = findVacationPeriods(vacations, VACATION_KEYWORDS.SMALL);
   const summerVacations = findVacationPeriods(vacations, VACATION_KEYWORDS.SUMMER);
 
-  const smallAllocation = allocateDays(smallVacations, 5);
+  const smallAllocation = allocateDays(smallVacations, 5, cpQuota);
   smallAllocation.forEach((date) => cpDates.add(date));
 
-  const summerAllocation = allocateDays(summerVacations, 5);
+  const summerAllocation = allocateDays(summerVacations, 5, cpQuota - cpDates.size);
   summerAllocation.forEach((date) => cpDates.add(date));
 
   const year = calendar.length ? Number(calendar[0].date.slice(0, 4)) : null;
-  if (year) {
+  if (year && rttQuota > 0) {
     const pentecostMondayDate = getPentecostMonday(year);
     if (pentecostMondayDate && !cpDates.has(pentecostMondayDate)) {
       rttDates.add(pentecostMondayDate);
@@ -96,10 +108,10 @@ export function allocateLeave(calendar: CalendarDay[], vacations: { name: string
     .sort((a, b) => a.priority - b.priority)
     .map((entry) => entry.day);
 
-  const remainingRttCount = 9 - rttDates.size;
+  const remainingRttCount = rttQuota - rttDates.size;
   remainingRttCandidates.slice(0, remainingRttCount).forEach((day) => rttDates.add(day.date));
 
-  const remainingCpCount = 25 - cpDates.size;
+  const remainingCpCount = cpQuota - cpDates.size;
   if (remainingCpCount > 0) {
     const extraCandidates = calendar.filter(
       (day) =>
