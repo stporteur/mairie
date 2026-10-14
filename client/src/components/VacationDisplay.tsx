@@ -10,6 +10,7 @@ interface VacationPeriod {
 
 interface VacationSource {
   local?: boolean;
+  estimated?: boolean;
   dataset?: string;
   resource?: {
     id?: string;
@@ -103,7 +104,9 @@ function VacationDisplay({ year, onVacationsLoaded, onLoadingChange, onYearChang
           </ul>
           {vacationSource ? (
             <p className="vacation-source">
-              Source : {vacationSource.local ? (
+              Source : {vacationSource.estimated ? (
+                'dates estimées — à vérifier'
+              ) : vacationSource.local ? (
                 'données locales'
               ) : (
                 vacationSource.resource && vacationSource.resource.url ? (

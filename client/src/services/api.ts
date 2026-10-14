@@ -8,6 +8,7 @@ export interface VacationPeriod {
 
 export interface VacationSource {
   local?: boolean;
+  estimated?: boolean;
   dataset?: string;
   resource?: {
     id?: string;
