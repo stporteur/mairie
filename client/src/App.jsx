@@ -15,6 +15,28 @@ const DEFAULT_LEAVE_SETTINGS = {
   vacationWeeklyHours: 35,
 };
 const LEAVE_SETTINGS_STORAGE_KEY = 'planning-atsem-leave-settings';
+const LEAVE_PROFILE_STORAGE_KEY = 'planning-atsem-leave-profile';
+const LEAVE_SETTING_PROFILES = {
+  atsem365: {
+    label: '36h30 ATSEM',
+    rttDays: '9',
+    vacationWeeklyHours: '35',
+    schoolWeeklyHours: '37',
+  },
+  atsem375: {
+    label: '37h30 ATSEM',
+    rttDays: '16',
+    vacationWeeklyHours: '37.5',
+    schoolWeeklyHours: '37.5',
+  },
+  mairie375: {
+    label: '37h30 MAIRIE',
+    rttDays: '16',
+    vacationWeeklyHours: '37.5',
+    schoolWeeklyHours: '37.5',
+  },
+};
+const LEAVE_PROFILE_NAMES = [...Object.keys(LEAVE_SETTING_PROFILES), 'custom'];
 
 function normalizeQuota(value, fallback) {
   if (value === '') return 0;
@@ -63,6 +85,48 @@ function readLeaveSettings() {
   }
 }
 
+function readLeaveDraftSettings() {
+  const settings = readLeaveSettings();
+  if (typeof window === 'undefined') return settings;
+
+  try {
+    const savedProfile = window.localStorage.getItem(LEAVE_PROFILE_STORAGE_KEY);
+    if (savedProfile === 'custom') {
+      return { ...settings, rttDays: '', vacationWeeklyHours: '', schoolWeeklyHours: '' };
+    }
+
+    const profile = LEAVE_SETTING_PROFILES[savedProfile];
+    return profile
+      ? {
+          ...settings,
+          rttDays: profile.rttDays,
+          vacationWeeklyHours: profile.vacationWeeklyHours,
+          schoolWeeklyHours: profile.schoolWeeklyHours,
+        }
+      : settings;
+  } catch {
+    return settings;
+  }
+}
+
+function readLeaveProfile() {
+  if (typeof window === 'undefined') return 'atsem365';
+
+  try {
+    const savedProfile = window.localStorage.getItem(LEAVE_PROFILE_STORAGE_KEY);
+    if (LEAVE_PROFILE_NAMES.includes(savedProfile)) return savedProfile;
+
+    const settings = readLeaveSettings();
+    return Object.entries(LEAVE_SETTING_PROFILES).find(([, profile]) =>
+      profile.rttDays === settings.rttDays &&
+      profile.vacationWeeklyHours === settings.vacationWeeklyHours &&
+      profile.schoolWeeklyHours === settings.schoolWeeklyHours,
+    )?.[0] || 'custom';
+  } catch {
+    return 'atsem365';
+  }
+}
+
 function App() {
   const [year, setYear] = useState(2026);
   const [vacations, setVacations] = useState([]);
@@ -70,8 +134,9 @@ function App() {
   const [loadingVacations, setLoadingVacations] = useState(false);
   const [trainingByMonth, setTrainingByMonth] = useState(Array.from({ length: 12 }, () => 0));
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [leaveSettings, setLeaveSettings] = useState(readLeaveSettings);
+  const [leaveSettings, setLeaveSettings] = useState(readLeaveDraftSettings);
   const [appliedLeaveSettings, setAppliedLeaveSettings] = useState(readLeaveSettings);
+  const [selectedLeaveProfile, setSelectedLeaveProfile] = useState(readLeaveProfile);
   const [calculationError, setCalculationError] = useState('');
   const cpQuota = normalizeQuota(appliedLeaveSettings.cpDays, DEFAULT_LEAVE_SETTINGS.cpDays);
   const rttQuota = normalizeQuota(appliedLeaveSettings.rttDays, DEFAULT_LEAVE_SETTINGS.rttDays);
@@ -90,6 +155,14 @@ function App() {
       // Keep the settings usable if browser storage is unavailable.
     }
   }, [cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LEAVE_PROFILE_STORAGE_KEY, selectedLeaveProfile);
+    } catch {
+      // Keep profile selection usable if browser storage is unavailable.
+    }
+  }, [selectedLeaveProfile]);
 
     const handleVacationsLoaded = useCallback((vacations) => {
       setVacations(vacations);
@@ -152,18 +225,44 @@ function App() {
 
   const handleLeaveSettingChange = (setting, value) => {
     setLeaveSettings((current) => ({ ...current, [setting]: value }));
+    if (setting !== 'cpDays') setSelectedLeaveProfile('custom');
+  };
+
+  const handleLeaveProfileChange = (profileName) => {
+    setSelectedLeaveProfile(profileName);
+    if (profileName === 'custom') {
+      setLeaveSettings((current) => ({
+        ...current,
+        rttDays: '',
+        vacationWeeklyHours: '',
+        schoolWeeklyHours: '',
+      }));
+      setCalculationError('');
+      return;
+    }
+
+    const profile = LEAVE_SETTING_PROFILES[profileName];
+    setLeaveSettings((current) => ({
+      ...current,
+      rttDays: profile.rttDays,
+      vacationWeeklyHours: profile.vacationWeeklyHours,
+      schoolWeeklyHours: profile.schoolWeeklyHours,
+    }));
+    setCalculationError('');
   };
 
   const handleLeaveSettingBlur = (setting) => {
     if (setting === 'schoolWeeklyHours') return;
 
     const fallback = DEFAULT_LEAVE_SETTINGS[setting];
-    setLeaveSettings((current) => ({
-      ...current,
-      [setting]: String(setting === 'cpDays' || setting === 'rttDays'
-        ? normalizeQuota(current[setting], fallback)
-        : normalizeWeeklyHours(current[setting], fallback)),
-    }));
+    setLeaveSettings((current) => current[setting] === ''
+      ? current
+      : {
+          ...current,
+          [setting]: String(setting === 'cpDays' || setting === 'rttDays'
+            ? normalizeQuota(current[setting], fallback)
+            : normalizeWeeklyHours(current[setting], fallback)),
+        });
   };
 
   const handleCalculate = () => {
@@ -228,6 +327,33 @@ function App() {
                 <section className="config-panel">
           <div className="card">
             <h2>Paramètres</h2>
+            <fieldset className="leave-profile-options" aria-label="Profils horaires">
+              {Object.entries(LEAVE_SETTING_PROFILES).map(([profileName, profile]) => (
+                <label key={profileName} className="leave-profile-option">
+                  <input
+                    type="radio"
+                    name="leave-profile"
+                    value={profileName}
+                    checked={selectedLeaveProfile === profileName}
+                    onChange={() => handleLeaveProfileChange(profileName)}
+                  />
+                  <span>
+                    <strong>{profile.label}</strong>
+                    <small>{profile.rttDays} jours RTT · {profile.vacationWeeklyHours} h vacances · {profile.schoolWeeklyHours} h scolaire</small>
+                  </span>
+                </label>
+              ))}
+              <label className="leave-profile-option">
+                <input
+                  type="radio"
+                  name="leave-profile"
+                  value="custom"
+                  checked={selectedLeaveProfile === 'custom'}
+                  onChange={() => handleLeaveProfileChange('custom')}
+                />
+                <span><strong>Custom</strong></span>
+              </label>
+            </fieldset>
             <div className="month-grid leave-settings-grid">
               <label className="month-input">
                 <span>Jours de CP</span>

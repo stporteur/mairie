@@ -396,6 +396,56 @@ button {
   gap: 10px 14px;
 }
 
+.leave-profile-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.leave-profile-option {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: flex-start;
+  gap: 9px !important;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+.leave-profile-option:has(input:checked) {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.leave-profile-option input[type='radio'] {
+  flex: 0 0 auto;
+  margin: 3px 0 0;
+  accent-color: #2563eb;
+}
+
+.leave-profile-option span {
+  display: grid;
+  gap: 3px;
+}
+
+.leave-profile-option strong {
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.leave-profile-option small {
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
 .month-input {
   display: grid;
   gap: 5px;
@@ -614,5 +664,9 @@ button {
 
   .vacation-item strong {
     grid-column: 1 / -1;
+  }
+
+  .leave-profile-options {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
