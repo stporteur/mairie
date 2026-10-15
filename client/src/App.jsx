@@ -26,13 +26,13 @@ const LEAVE_SETTING_PROFILES = {
   },
   atsem375: {
     label: '37h30 ATSEM',
-    rttDays: '16',
+    rttDays: '15',
     vacationWeeklyHours: '37.5',
     schoolWeeklyHours: '37.5',
   },
   mairie375: {
     label: '37h30 MAIRIE',
-    rttDays: '16',
+    rttDays: '15',
     vacationWeeklyHours: '37.5',
     schoolWeeklyHours: '37.5',
   },
