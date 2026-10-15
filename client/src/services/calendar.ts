@@ -16,17 +16,13 @@ export interface CalendarDay {
   isRtt: boolean;
 }
 
-function getSchoolHoursByWeekday(schoolWeeklyHours: number): Map<number, number> {
+function getSchoolHoursByWeekday(schoolWeeklyHours: number, schoolWorkdaysPerWeek: number): Map<number, number> {
   const totalQuarterHours = Math.round(schoolWeeklyHours * 4);
-  const baseQuarterHours = Math.floor(totalQuarterHours / 4);
-  const extraQuarterHours = totalQuarterHours % 4;
-  const quarterHoursByWeekday = new Map<number, number>([
-    [1, baseQuarterHours], // Monday
-    [2, baseQuarterHours], // Tuesday
-    [4, baseQuarterHours], // Thursday
-    [5, baseQuarterHours], // Friday
-  ]);
-  const preferredWeekdays = [2, 4, 1, 5];
+  const weekdays = schoolWorkdaysPerWeek === 5 ? [1, 2, 3, 4, 5] : [1, 2, 4, 5];
+  const baseQuarterHours = Math.floor(totalQuarterHours / weekdays.length);
+  const extraQuarterHours = totalQuarterHours % weekdays.length;
+  const quarterHoursByWeekday = new Map(weekdays.map((weekday) => [weekday, baseQuarterHours]));
+  const preferredWeekdays = schoolWorkdaysPerWeek === 5 ? weekdays : [2, 4, 1, 5];
 
   preferredWeekdays.slice(0, extraQuarterHours).forEach((weekday) => {
     quarterHoursByWeekday.set(weekday, baseQuarterHours + 1);
@@ -43,9 +39,10 @@ export function buildYearCalendar(
   vacations: { name: string; start: string; end: string; estimated?: boolean }[],
   vacationWeeklyHours = 35,
   schoolWeeklyHours = 37,
+  schoolWorkdaysPerWeek = 4,
 ): CalendarDay[] {
   const holidaySet = createHolidaySet(year);
-  const schoolHoursByWeekday = getSchoolHoursByWeekday(schoolWeeklyHours);
+  const schoolHoursByWeekday = getSchoolHoursByWeekday(schoolWeeklyHours, schoolWorkdaysPerWeek);
   const calendar: CalendarDay[] = [];
   const firstDay = new Date(Date.UTC(year, 0, 1));
   const lastDay = new Date(Date.UTC(year, 11, 31));
@@ -58,7 +55,7 @@ export function buildYearCalendar(
     const vacation = vacations.find((period) => iso >= period.start && iso <= period.end);
     const inVacation = Boolean(vacation);
     const vacationEstimated = vacation?.estimated === true;
-    const isWednesdayRest = day === 3 && !inVacation;
+    const isWednesdayRest = day === 3 && !inVacation && schoolWorkdaysPerWeek === 4;
     const isWorkday = !isWeekend && !isHoliday && !isWednesdayRest;
     const defaultHours = isWorkday
       ? (inVacation ? vacationWeeklyHours / 5 : schoolHoursByWeekday.get(day) ?? 0)

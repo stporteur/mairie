@@ -16,6 +16,7 @@ const DEFAULT_LEAVE_SETTINGS = {
 };
 const LEAVE_SETTINGS_STORAGE_KEY = 'planning-atsem-leave-settings';
 const LEAVE_PROFILE_STORAGE_KEY = 'planning-atsem-leave-profile';
+const APPLIED_LEAVE_PROFILE_STORAGE_KEY = 'planning-atsem-applied-leave-profile';
 const LEAVE_SETTING_PROFILES = {
   atsem365: {
     label: '36h30 ATSEM',
@@ -127,6 +128,24 @@ function readLeaveProfile() {
   }
 }
 
+function readAppliedLeaveProfile() {
+  if (typeof window === 'undefined') return 'atsem365';
+
+  try {
+    const savedProfile = window.localStorage.getItem(APPLIED_LEAVE_PROFILE_STORAGE_KEY);
+    if (LEAVE_PROFILE_NAMES.includes(savedProfile)) return savedProfile;
+
+    const settings = readLeaveSettings();
+    return Object.entries(LEAVE_SETTING_PROFILES).find(([, profile]) =>
+      profile.rttDays === settings.rttDays &&
+      profile.vacationWeeklyHours === settings.vacationWeeklyHours &&
+      profile.schoolWeeklyHours === settings.schoolWeeklyHours,
+    )?.[0] || 'atsem365';
+  } catch {
+    return 'atsem365';
+  }
+}
+
 function App() {
   const [year, setYear] = useState(2026);
   const [vacations, setVacations] = useState([]);
@@ -137,6 +156,7 @@ function App() {
   const [leaveSettings, setLeaveSettings] = useState(readLeaveDraftSettings);
   const [appliedLeaveSettings, setAppliedLeaveSettings] = useState(readLeaveSettings);
   const [selectedLeaveProfile, setSelectedLeaveProfile] = useState(readLeaveProfile);
+  const [appliedLeaveProfile, setAppliedLeaveProfile] = useState(readAppliedLeaveProfile);
   const [calculationError, setCalculationError] = useState('');
   const cpQuota = normalizeQuota(appliedLeaveSettings.cpDays, DEFAULT_LEAVE_SETTINGS.cpDays);
   const rttQuota = normalizeQuota(appliedLeaveSettings.rttDays, DEFAULT_LEAVE_SETTINGS.rttDays);
@@ -164,6 +184,14 @@ function App() {
     }
   }, [selectedLeaveProfile]);
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(APPLIED_LEAVE_PROFILE_STORAGE_KEY, appliedLeaveProfile);
+    } catch {
+      // Keep applied calculations usable if browser storage is unavailable.
+    }
+  }, [appliedLeaveProfile]);
+
     const handleVacationsLoaded = useCallback((vacations) => {
       setVacations(vacations);
     }, []);
@@ -180,9 +208,10 @@ function App() {
     if (!vacations.length) {
       return null;
     }
-    const calendar = buildYearCalendar(year, vacations, vacationWeeklyHours, schoolWeeklyHours);
+    const schoolWorkdaysPerWeek = appliedLeaveProfile === 'mairie375' ? 5 : 4;
+    const calendar = buildYearCalendar(year, vacations, vacationWeeklyHours, schoolWeeklyHours, schoolWorkdaysPerWeek);
     return allocateLeave(calendar, vacations, cpQuota, rttQuota);
-  }, [year, vacations, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours]);
+  }, [year, vacations, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, appliedLeaveProfile]);
 
   const totalTrainingHours = trainingByMonth.reduce((total, value) => total + Number(value || 0), 0);
   const totalWorkHours = calendarInfo
@@ -287,6 +316,7 @@ function App() {
     };
     setLeaveSettings(nextSettings);
     setAppliedLeaveSettings(nextSettings);
+    setAppliedLeaveProfile(selectedLeaveProfile);
     setCalculationError('');
   };
 
