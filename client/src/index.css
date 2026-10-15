@@ -164,6 +164,27 @@ button {
   margin-top: 12px;
 }
 
+.export-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 8px;
+}
+
+.export-actions .alert {
+  margin: 0;
+}
+
+.export-button {
+  min-width: 140px;
+}
+
+.export-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .stats-grid {
   margin-bottom: 28px;
 }

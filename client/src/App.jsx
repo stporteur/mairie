@@ -158,6 +158,8 @@ function App() {
   const [selectedLeaveProfile, setSelectedLeaveProfile] = useState(readLeaveProfile);
   const [appliedLeaveProfile, setAppliedLeaveProfile] = useState(readAppliedLeaveProfile);
   const [calculationError, setCalculationError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
   const cpQuota = normalizeQuota(appliedLeaveSettings.cpDays, DEFAULT_LEAVE_SETTINGS.cpDays);
   const rttQuota = normalizeQuota(appliedLeaveSettings.rttDays, DEFAULT_LEAVE_SETTINGS.rttDays);
   const schoolWeeklyHours = normalizeWeeklyHours(appliedLeaveSettings.schoolWeeklyHours, DEFAULT_LEAVE_SETTINGS.schoolWeeklyHours);
@@ -318,6 +320,53 @@ function App() {
     setAppliedLeaveSettings(nextSettings);
     setAppliedLeaveProfile(selectedLeaveProfile);
     setCalculationError('');
+  };
+
+  const handleExport = async () => {
+    if (!calendarWithTraining.length || exporting) return;
+
+    setExporting(true);
+    setExportError('');
+    try {
+      const response = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          year,
+          profile: LEAVE_SETTING_PROFILES[selectedLeaveProfile]?.label || 'Custom',
+          days: calendarWithTraining.map((day) => ({
+            date: day.date,
+            effectiveHours: day.effectiveHours,
+            isWeekend: day.isWeekend,
+            isHoliday: day.isHoliday,
+            inVacation: day.inVacation,
+            vacationEstimated: day.vacationEstimated,
+            isWednesdayRest: day.isWednesdayRest,
+            isCp: day.isCp,
+            isRtt: day.isRtt,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || `Échec de l’export (${response.status}).`);
+      }
+
+      const file = await response.blob();
+      const downloadUrl = URL.createObjectURL(file);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `Planing_${year}_${(LEAVE_SETTING_PROFILES[selectedLeaveProfile]?.label || 'Custom').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').toUpperCase()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Erreur pendant la création du fichier Excel.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const monthlyTables = monthNames.map((_, monthIndex) =>
@@ -595,6 +644,18 @@ function App() {
             </tbody>
           </table>
         </section>
+
+        <div className="export-actions">
+          {exportError ? <p className="alert" role="alert">{exportError}</p> : null}
+          <button
+            className="primary-button export-button"
+            type="button"
+            onClick={handleExport}
+            disabled={!calendarWithTraining.length || exporting}
+          >
+            {exporting ? 'Export en cours…' : 'Export'}
+          </button>
+        </div>
       </main>
     </div>
   );
