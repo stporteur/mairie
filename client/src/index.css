@@ -85,6 +85,11 @@ button {
   width: 44px;
 }
 
+.sidebar nav {
+  display: grid;
+  gap: 10px;
+}
+
 .brand {
   font-size: 1.2rem;
   font-weight: 700;

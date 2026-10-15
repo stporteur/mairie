@@ -3,6 +3,7 @@ import express, { Express, Request, Response } from 'express';
 import { getOfficialVacations } from './officialHolidays';
 import { isSupportedVacationYear, resolveVacationsForYear } from './vacations';
 import { ExportCalendarRequest, generateCalendarWorkbook } from './export';
+import { ForecastExportRequest, generateForecastWorkbook } from './forecastExport';
 
 const app: Express = express();
 const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
@@ -27,10 +28,22 @@ app.post('/api/export', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/api/export/forecast', async (req: Request, res: Response) => {
+  try {
+    const result = await generateForecastWorkbook(req.body as ForecastExportRequest);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    return res.status(200).send(Buffer.from(result.buffer));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erreur pendant la génération du prévisionnel Excel.';
+    return res.status(400).json({ error: message });
+  }
+});
+
 app.get('/api/vacations/:year', async (req: Request, res: Response) => {
   const year = Number(req.params.year);
   if (!isSupportedVacationYear(year)) {
-    return res.status(400).json({ error: 'L’année doit être un entier compris entre 2020 et 2050.' });
+    return res.status(400).json({ error: 'L’année doit être un entier compris entre 2020 et 2059.' });
   }
 
   let official;

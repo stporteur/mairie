@@ -49,7 +49,7 @@ const vacationsByYear: Record<number, VacationPeriod[]> = {
 };
 
 export function isSupportedVacationYear(year: number): boolean {
-  return Number.isInteger(year) && year >= 2020 && year <= 2050;
+  return Number.isInteger(year) && year >= 2020 && year <= 2059;
 }
 
 export function resolveVacationsForYear(

@@ -7,6 +7,7 @@ import { allocateLeave } from './services/leave';
 import { allocateTraining } from './services/training';
 import { fetchSchoolVacations, adjustVacationDates } from './services/api';
 import VacationDisplay from './components/VacationDisplay';
+import ForecastPage from './components/ForecastPage';
 
 const DEFAULT_LEAVE_SETTINGS = {
   cpDays: 25,
@@ -153,6 +154,7 @@ function App() {
   const [loadingVacations, setLoadingVacations] = useState(false);
   const [trainingByMonth, setTrainingByMonth] = useState(Array.from({ length: 12 }, () => 0));
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activePage, setActivePage] = useState('planning');
   const [leaveSettings, setLeaveSettings] = useState(readLeaveDraftSettings);
   const [appliedLeaveSettings, setAppliedLeaveSettings] = useState(readLeaveSettings);
   const [selectedLeaveProfile, setSelectedLeaveProfile] = useState(readLeaveProfile);
@@ -389,7 +391,22 @@ function App() {
           <span>Marie de L'Haÿ-les-Roses</span>
         </div>
         <nav>
-          <button className="nav-item active">Planning ATSEM</button>
+          <button
+            className={`nav-item ${activePage === 'planning' ? 'active' : ''}`}
+            type="button"
+            onClick={() => setActivePage('planning')}
+            aria-current={activePage === 'planning' ? 'page' : undefined}
+          >
+            Planning ATSEM
+          </button>
+          <button
+            className={`nav-item ${activePage === 'forecast' ? 'active' : ''}`}
+            type="button"
+            onClick={() => setActivePage('forecast')}
+            aria-current={activePage === 'forecast' ? 'page' : undefined}
+          >
+            Prévisionnel
+          </button>
         </nav>
         <div className="footer-note">Calcul des heures, congés et vacances scolaires</div>
       </aside>
@@ -398,11 +415,15 @@ function App() {
         <header className="banner">
           <div>
             <p className="eyebrow">Portail applicatif</p>
-            <h1>Planning ATSEM</h1>
-            <p>Analyse annuelle du temps de travail, des congés et de la formation.</p>
+            <h1>{activePage === 'planning' ? 'Planning ATSEM' : 'Prévisionnel'}</h1>
+            <p>{activePage === 'planning'
+              ? 'Analyse annuelle du temps de travail, des congés et de la formation.'
+              : 'Projection des heures et congés sur les dix prochaines années.'}</p>
           </div>
         </header>
 
+        {activePage === 'planning' ? (
+          <>
                 <section className="config-panel">
           <div className="card">
             <h2>Paramètres</h2>
@@ -656,6 +677,16 @@ function App() {
             {exporting ? 'Export en cours…' : 'Export'}
           </button>
         </div>
+          </>
+        ) : (
+          <ForecastPage
+            key={`${year}-${selectedLeaveProfile}`}
+            startYear={year}
+            profiles={LEAVE_SETTING_PROFILES}
+            initialSettings={leaveSettings}
+            initialProfile={selectedLeaveProfile}
+          />
+        )}
       </main>
     </div>
   );

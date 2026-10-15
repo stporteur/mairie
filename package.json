@@ -8,7 +8,7 @@
     "start": "ts-node server/index.ts",
     "dev": "concurrently \"npm run dev --prefix client\" \"nodemon\"",
     "build": "npm run build --prefix client",
-    "test": "ts-node --project server/tsconfig.json server/vacations.test.ts && ts-node --project server/tsconfig.json server/export.test.ts"
+    "test": "ts-node --project server/tsconfig.json server/vacations.test.ts && ts-node --project server/tsconfig.json server/export.test.ts && ts-node --project server/tsconfig.json server/forecastExport.test.ts"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

@@ -103,8 +103,9 @@ assert.ok(estimate2029.vacations.some(({ name }) => name.includes('Noël')));
 
 assert.equal(isSupportedVacationYear(2020), true);
 assert.equal(isSupportedVacationYear(2050), true);
+assert.equal(isSupportedVacationYear(2059), true);
 assert.equal(isSupportedVacationYear(2019), false);
-assert.equal(isSupportedVacationYear(2051), false);
+assert.equal(isSupportedVacationYear(2060), false);
 assert.equal(isSupportedVacationYear(2025.5), false);
 
 console.log('Vacation estimation tests passed.');
