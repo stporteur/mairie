@@ -547,23 +547,6 @@ function App() {
                       })}
                     </tr>
                     <tr>
-                      <th aria-label="Formation" title="Formation">F</th>
-                      {days.map((day) => {
-                        let cellClass = '';
-                        if (day.inVacation) {
-                          cellClass = getCalendarCellClass(day, day.isWeekend ? 'vacation-weekend-cell' : 'vacation-weekday-cell');
-                        } else {
-                          const dayOfWeek = new Date(day.date).getUTCDay();
-                          cellClass = getCalendarCellClass(day, dayOfWeek === 0 || dayOfWeek === 6 || dayOfWeek === 3 ? 'normal-gray-cell' : 'normal-white-cell');
-                        }
-                        return (
-                          <td key={`${day.date}-training`} className={cellClass}>
-                            {day.trainingHours ? day.trainingHours.toFixed(2) : '-'}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                    <tr>
                       <th aria-label="Congés" title="Congés">C</th>
                       {days.map((day) => {
                         let cellClass = '';
