@@ -60,7 +60,22 @@ export function resolveVacationsForYear(
   const officialPeriods = Array.isArray(officialYear) ? officialYear : officialYear?.C;
 
   if (Array.isArray(officialPeriods)) {
-    return { vacations: officialPeriods, source: official?.source ?? {} };
+    const estimatedPeriods = buildEstimatedVacationPeriods(year)
+      .filter((estimate) => !officialPeriods.some(
+        (period) => period.start <= estimate.end && period.end >= estimate.start,
+      ))
+      .map((period) => ({ ...period, estimated: true }));
+
+    return {
+      vacations: [
+        ...officialPeriods.map((period) => ({ ...period, estimated: false })),
+        ...estimatedPeriods,
+      ],
+      source: {
+        ...official?.source,
+        ...(estimatedPeriods.length > 0 ? { estimated: true } : {}),
+      },
+    };
   }
 
   const localPeriods = vacationsByYear[year];
@@ -69,7 +84,7 @@ export function resolveVacationsForYear(
   }
 
   return {
-    vacations: buildEstimatedVacationPeriods(year),
+    vacations: buildEstimatedVacationPeriods(year).map((period) => ({ ...period, estimated: true })),
     source: { estimated: true },
   };
 }

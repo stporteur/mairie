@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { monthNames, VACATION_KEYWORDS, getDefaultVacationRanges } from './utils/constants';
 import { formatIso, parseIso, getPentecostMonday } from './utils/date';
 import { buildVacationsFromRanges, createHolidaySet, findVacationPeriods } from './services/vacations';
@@ -12,10 +12,12 @@ interface VacationPeriod {
   name: string;
   start: string;
   end: string;
+  estimated?: boolean;
 }
 
 interface VacationSource {
   local?: boolean;
+  estimated?: boolean;
   dataset?: string;
   resource?: {
     id?: string;
@@ -32,13 +34,13 @@ function App() {
   const [trainingByMonth, setTrainingByMonth] = useState<number[]>(Array.from({ length: 12 }, () => 0));
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
 
-  const handleVacationsLoaded = (vacations: VacationPeriod[]) => {
+  const handleVacationsLoaded = useCallback((vacations: VacationPeriod[]) => {
     setVacations(vacations);
-  };
+  }, []);
 
-  const handleLoadingChange = (loading: boolean) => {
+  const handleLoadingChange = useCallback((loading: boolean) => {
     setLoadingVacations(loading);
-  };
+  }, []);
 
   const handleYearChange = (newYear: number) => {
     setYear(newYear);
@@ -198,7 +200,11 @@ function App() {
                     <tr>
                       <th rowSpan="2">Jour</th>
                       {days.map((day) => {
-                        const headerClass = day.inVacation ? 'vacation-day-header' : '';
+                        const headerClass = day.inVacation
+                          ? day.vacationEstimated
+                            ? 'vacation-day-header estimated-vacation-day-header'
+                            : 'vacation-day-header'
+                          : '';
                         const dayInitial = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'][new Date(`${day.date}T00:00:00Z`).getUTCDay()];
                         return (
                           <th key={`${day.date}-initial`} className={headerClass}>
@@ -209,7 +215,11 @@ function App() {
                     </tr>
                     <tr>
                       {days.map((day) => {
-                        const headerClass = day.inVacation ? 'vacation-day-header' : '';
+                        const headerClass = day.inVacation
+                          ? day.vacationEstimated
+                            ? 'vacation-day-header estimated-vacation-day-header'
+                            : 'vacation-day-header'
+                          : '';
                         return (
                           <th key={`${day.date}-number`} className={headerClass}>
                             {Number(day.date.slice(-2))}
@@ -284,7 +294,6 @@ function App() {
               <tr>
                 <th>Mois</th>
                 <th>Heures de travail</th>
-                <th>Heures de formation</th>
                 <th>CP</th>
                 <th>RTT</th>
                 <th>Jours de vacances</th>
@@ -295,7 +304,6 @@ function App() {
                 <tr key={summary.monthName}>
                   <td>{summary.monthName}</td>
                   <td>{summary.workHours.toFixed(2)}</td>
-                  <td>{summary.trainingHours.toFixed(2)}</td>
                   <td>{summary.cpDays}</td>
                   <td>{summary.rttDays}</td>
                   <td>{summary.vacationDays}</td>

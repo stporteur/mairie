@@ -11,6 +11,7 @@ export interface CalendarDay {
   isWorkday: boolean;
   defaultHours: number;
   vacationName: string | null;
+  vacationEstimated: boolean;
   isCp: boolean;
   isRtt: boolean;
 }
@@ -39,7 +40,7 @@ function getSchoolHoursByWeekday(schoolWeeklyHours: number): Map<number, number>
 // Build a year calendar with workdays, holidays, and vacations
 export function buildYearCalendar(
   year: number,
-  vacations: { name: string; start: string; end: string }[],
+  vacations: { name: string; start: string; end: string; estimated?: boolean }[],
   vacationWeeklyHours = 35,
   schoolWeeklyHours = 37,
 ): CalendarDay[] {
@@ -54,7 +55,9 @@ export function buildYearCalendar(
     const day = date.getUTCDay();
     const isWeekend = day === 0 || day === 6;
     const isHoliday = holidaySet.has(iso);
-    const inVacation = vacations.some((vacation) => iso >= vacation.start && iso <= vacation.end);
+    const vacation = vacations.find((period) => iso >= period.start && iso <= period.end);
+    const inVacation = Boolean(vacation);
+    const vacationEstimated = vacation?.estimated === true;
     const isWednesdayRest = day === 3 && !inVacation;
     const isWorkday = !isWeekend && !isHoliday && !isWednesdayRest;
     const defaultHours = isWorkday
@@ -70,7 +73,8 @@ export function buildYearCalendar(
       isWednesdayRest,
       isWorkday,
       defaultHours,
-      vacationName: vacations.find((vacation) => iso >= vacation.start && iso <= vacation.end)?.name || null,
+      vacationName: vacation?.name || null,
+      vacationEstimated,
       isCp: false,
       isRtt: false,
     });
@@ -81,6 +85,11 @@ export function buildYearCalendar(
 
 // Determine the CSS class for a calendar cell
 export function getCalendarCellClass(day: CalendarDay, defaultClass: string): string {
+  if (day.inVacation && day.vacationEstimated) {
+    return day.isWeekend || day.isHoliday
+      ? 'estimated-vacation-weekend-cell'
+      : 'estimated-vacation-weekday-cell';
+  }
   if (day.isWednesdayRest) {
     return 'wednesday-rest-cell';
   }

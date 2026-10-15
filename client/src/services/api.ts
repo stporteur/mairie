@@ -4,6 +4,7 @@ export interface VacationPeriod {
   name: string;
   start: string;
   end: string;
+  estimated?: boolean;
 }
 
 export interface VacationSource {
@@ -51,21 +52,24 @@ export function adjustVacationDates(vacations: VacationPeriod[], year: number): 
     let adjustedStart = new Date(startDate);
     let adjustedEnd = new Date(endDate);
 
-    if (!isNoelDecember) {
-      // Find the Saturday before or equal to the start date
-      const dayOfWeekStart = startDate.getUTCDay();
-      const daysBackToSaturday = dayOfWeekStart === 6 ? 0 : ((dayOfWeekStart + 1) % 7);
-
-      adjustedStart.setUTCDate(adjustedStart.getUTCDate() - daysBackToSaturday);
-    } else {
+    if (!vacation.estimated) {
       // For December Christmas, always end on December 31st
-      adjustedEnd.setUTCFullYear(year, 11, 31);
+      if (isNoelDecember) {
+        adjustedEnd.setUTCFullYear(year, 11, 31);
+      } else {
+        // Find the Saturday before or equal to the start date
+        const dayOfWeekStart = startDate.getUTCDay();
+        const daysBackToSaturday = dayOfWeekStart === 6 ? 0 : ((dayOfWeekStart + 1) % 7);
+
+        adjustedStart.setUTCDate(adjustedStart.getUTCDate() - daysBackToSaturday);
+      }
     }
 
     return {
       name: vacation.name,
       start: formatIso(adjustedStart),
       end: formatIso(adjustedEnd),
+      estimated: vacation.estimated,
     };
   });
 }

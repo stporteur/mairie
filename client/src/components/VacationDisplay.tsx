@@ -6,6 +6,7 @@ interface VacationPeriod {
   name: string;
   start: string;
   end: string;
+  estimated?: boolean;
 }
 
 interface VacationSource {
@@ -37,9 +38,12 @@ function VacationDisplay({ year, onVacationsLoaded, onLoadingChange, onYearChang
         const data = await fetchSchoolVacations(year);
         setVacationSource(data.source || null);
         if (data.vacations) {
-          const filteredVacations = data.vacations.filter((vacation) =>
-            vacation.name?.toLowerCase().includes('vacances')
-          );
+          const filteredVacations = data.vacations
+            .filter((vacation) => vacation.name?.toLowerCase().includes('vacances'))
+            .map((vacation) => ({
+              ...vacation,
+              estimated: vacation.estimated ?? data.source?.estimated === true,
+            }));
           const adjustedVacations = adjustVacationDates(filteredVacations, year);
           setVacations(adjustedVacations);
           onVacationsLoaded(adjustedVacations);
@@ -82,7 +86,7 @@ function VacationDisplay({ year, onVacationsLoaded, onLoadingChange, onYearChang
         </label>
       </div>
       {vacations.length > 0 ? (
-        <div className="vacation-display">
+        <div className={`vacation-display ${vacationSource?.estimated ? 'estimated-vacation' : ''}`}>
           <p>Vacances scolaires zone C pour {year}:</p>
           <ul className="vacation-list">
             {vacations.map((period, index) => (
@@ -105,7 +109,9 @@ function VacationDisplay({ year, onVacationsLoaded, onLoadingChange, onYearChang
           {vacationSource ? (
             <p className="vacation-source">
               Source : {vacationSource.estimated ? (
-                'dates estimées — à vérifier'
+                vacationSource.resource
+                  ? 'données officielles complétées par estimation — à vérifier'
+                  : 'dates estimées — à vérifier'
               ) : vacationSource.local ? (
                 'données locales'
               ) : (
