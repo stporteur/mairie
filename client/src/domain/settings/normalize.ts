@@ -1,4 +1,5 @@
 import { DEFAULT_LEAVE_SETTINGS } from './leaveProfiles';
+import type { PlanningDescriptor } from '../planning/types';
 import type { LeaveParameters, LeaveSettingKey, LeaveSettings } from './types';
 
 const QUARTER_HOUR_TOLERANCE = 1e-8;
@@ -49,13 +50,13 @@ export function normalizeSettingValue(setting: LeaveSettingKey, value: string): 
     : normalizeWeeklyHours(value, fallback));
 }
 
-export function toLeaveParameters(settings: LeaveSettings, schoolWorkdaysPerWeek: number): LeaveParameters {
+export function toLeaveParameters(settings: LeaveSettings, planning: PlanningDescriptor): LeaveParameters {
   return {
     cpQuota: normalizeQuota(settings.cpDays, defaultOf('cpDays')),
     rttQuota: normalizeQuota(settings.rttDays, defaultOf('rttDays')),
     schoolWeeklyHours: normalizeWeeklyHours(settings.schoolWeeklyHours, defaultOf('schoolWeeklyHours')),
     vacationWeeklyHours: normalizeWeeklyHours(settings.vacationWeeklyHours, defaultOf('vacationWeeklyHours')),
-    schoolWorkdaysPerWeek,
+    planning,
   };
 }
 

@@ -19,7 +19,7 @@ const APP_COLORS = {
   estimatedVacationText: 'FF92400E',
   estimatedVacationOffdayBackground: 'FFFDE68A',
   offdayBackground: 'FFD1D5DB',
-  wednesdayRestBackground: 'FFEFF2F7',
+  restDayBackground: 'FFEFF2F7',
   weekdayBackground: 'FFFFFFFF',
 };
 
@@ -57,19 +57,14 @@ function setCalendarBodyColors(cell: ExcelJS.Cell, day?: ExportCalendarDay): voi
       isEstimatedOffday ? APP_COLORS.estimatedVacationOffdayBackground : APP_COLORS.estimatedVacationBackground,
       'FF111827',
     );
-  } else if (day.isWednesdayRest) {
-    setCellColors(cell, APP_COLORS.wednesdayRestBackground, 'FF111827');
+  } else if (day.isRestDay) {
+    setCellColors(cell, APP_COLORS.restDayBackground, 'FF111827');
   } else if (day.isWeekend || day.isHoliday) {
     setCellColors(cell, APP_COLORS.offdayBackground, 'FF111827');
   } else if (day.inVacation) {
     setCellColors(cell, APP_COLORS.weekdayBackground, 'FF111827');
   } else {
-    const weekday = new Date(`${day.date}T00:00:00.000Z`).getUTCDay();
-    setCellColors(
-      cell,
-      weekday === 3 ? 'FFF3F4F6' : APP_COLORS.weekdayBackground,
-      'FF111827',
-    );
+    setCellColors(cell, APP_COLORS.weekdayBackground, 'FF111827');
   }
 }
 

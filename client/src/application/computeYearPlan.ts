@@ -3,6 +3,7 @@ import type { HolidayProvider } from '@/ports/HolidayProvider';
 import { buildYearCalendar } from '@/domain/calendar/buildYearCalendar';
 import type { TrainingCalendarDay } from '@/domain/calendar/types';
 import { allocateLeave, type LeaveAllocation } from '@/domain/leave/allocateLeave';
+import { createPlanningStrategy } from '@/domain/planning/createPlanningStrategy';
 import type { LeaveParameters } from '@/domain/settings/types';
 import { allocateTraining } from '@/domain/training/allocateTraining';
 
@@ -12,13 +13,11 @@ export function allocateYearLeave(
   parameters: LeaveParameters,
   holidays: HolidayProvider,
 ): LeaveAllocation {
-  const calendar = buildYearCalendar({
-    year,
-    vacations,
-    vacationWeeklyHours: parameters.vacationWeeklyHours,
-    schoolWeeklyHours: parameters.schoolWeeklyHours,
-    schoolWorkdaysPerWeek: parameters.schoolWorkdaysPerWeek,
-  }, holidays);
+  const strategy = createPlanningStrategy(parameters.planning, {
+    school: parameters.schoolWeeklyHours,
+    vacation: parameters.vacationWeeklyHours,
+  });
+  const calendar = buildYearCalendar({ year, vacations, strategy }, holidays);
   return allocateLeave(calendar, vacations, parameters.cpQuota, parameters.rttQuota);
 }
 

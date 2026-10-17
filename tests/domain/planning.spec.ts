@@ -1,8 +1,10 @@
 import { buildYearCalendar } from '@/domain/calendar/buildYearCalendar';
-import { getSchoolHoursByWeekday } from '@/domain/calendar/schoolHours';
 import { allocateLeave } from '@/domain/leave/allocateLeave';
 import type { LeaveRule } from '@/domain/leave/LeaveRule';
 import { getPentecostMonday } from '@/domain/dates/easter';
+import { createPlanningStrategy } from '@/domain/planning/createPlanningStrategy';
+import { distributeQuarterHours } from '@/domain/planning/distributeHours';
+import type { PlanningDescriptor } from '@/domain/planning/types';
 import { allocateTraining } from '@/domain/training/allocateTraining';
 import type { HolidayProvider } from '@/ports/HolidayProvider';
 
@@ -16,19 +18,20 @@ const vacations2026 = [
   { name: 'Vacances de Noël', start: '2026-12-19', end: '2026-12-31' },
 ];
 
-function calendar2026(schoolWorkdaysPerWeek = 4) {
+const ATSEM: PlanningDescriptor = { type: 'ATSEM', schoolRestDays: [3], vacationRestDays: [] };
+const STANDARD: PlanningDescriptor = { type: 'STANDARD', schoolRestDays: [], vacationRestDays: [] };
+
+function calendar2026(planning: PlanningDescriptor = ATSEM) {
   return buildYearCalendar({
     year: 2026,
     vacations: vacations2026,
-    vacationWeeklyHours: 35,
-    schoolWeeklyHours: 37,
-    schoolWorkdaysPerWeek,
+    strategy: createPlanningStrategy(planning, { school: 37, vacation: 35 }),
   }, noHolidays);
 }
 
-describe('getSchoolHoursByWeekday', () => {
+describe('distributeQuarterHours', () => {
   it('spreads quarter hours on Tuesday and Thursday first for a four-day week', () => {
-    const hours = getSchoolHoursByWeekday(37.5, 4);
+    const hours = distributeQuarterHours(37.5, [1, 2, 4, 5], [2, 4, 1, 5, 3]);
     expect(hours.get(2)).toBe(9.5);
     expect(hours.get(4)).toBe(9.5);
     expect(hours.get(1)).toBe(9.25);
@@ -36,9 +39,38 @@ describe('getSchoolHoursByWeekday', () => {
     expect(hours.has(3)).toBe(false);
   });
 
-  it('uses five days for a five-day week', () => {
-    const hours = getSchoolHoursByWeekday(37.5, 5);
-    expect([...hours.values()]).toEqual([7.5, 7.5, 7.5, 7.5, 7.5]);
+  it('splits evenly over five days and returns nothing without workdays', () => {
+    expect([...distributeQuarterHours(37.5, [1, 2, 3, 4, 5], [2, 4, 1, 5, 3]).values()]).toEqual([7.5, 7.5, 7.5, 7.5, 7.5]);
+    expect(distributeQuarterHours(37.5, [], [2]).size).toBe(0);
+  });
+});
+
+describe('planning strategies', () => {
+  it('ATSEM rests on the profile rest days of each period', () => {
+    const strategy = createPlanningStrategy(
+      { type: 'ATSEM', schoolRestDays: [3], vacationRestDays: [1, 5] },
+      { school: 37.5, vacation: 30 },
+    );
+    expect(strategy.isRestDay(3, false)).toBe(true);
+    expect(strategy.isRestDay(3, true)).toBe(false);
+    expect(strategy.isRestDay(1, true)).toBe(true);
+    expect(strategy.dailyHours(2, false)).toBe(9.5);
+    expect(strategy.dailyHours(3, false)).toBe(0);
+    expect(strategy.dailyHours(2, true)).toBe(10);
+    expect(strategy.dailyHours(1, true)).toBe(0);
+  });
+
+  it('ATSEM without rest days works five days a week', () => {
+    const strategy = createPlanningStrategy({ type: 'ATSEM', schoolRestDays: [], vacationRestDays: [] }, { school: 35, vacation: 35 });
+    expect(strategy.isRestDay(3, false)).toBe(false);
+    expect(strategy.dailyHours(3, false)).toBe(7);
+  });
+
+  it('STANDARD never rests and splits the hours evenly over five days all year', () => {
+    const strategy = createPlanningStrategy(STANDARD, { school: 37.5, vacation: 37.5 });
+    expect(strategy.isRestDay(3, false)).toBe(false);
+    expect(strategy.dailyHours(3, false)).toBe(7.5);
+    expect(strategy.dailyHours(1, true)).toBe(7.5);
   });
 });
 
@@ -47,19 +79,17 @@ describe('buildYearCalendar', () => {
     expect(calendar2026()).toHaveLength(365);
   });
 
-  it('rests on Wednesdays outside vacations in a four-day week only', () => {
+  it('flags the strategy rest days only', () => {
     const wednesday = (days: ReturnType<typeof calendar2026>) => days.find((d) => d.date === '2026-01-14')!;
-    expect(wednesday(calendar2026(4)).isWednesdayRest).toBe(true);
-    expect(wednesday(calendar2026(5)).isWednesdayRest).toBe(false);
+    expect(wednesday(calendar2026(ATSEM)).isRestDay).toBe(true);
+    expect(wednesday(calendar2026(STANDARD)).isRestDay).toBe(false);
   });
 
   it('uses the injected holiday provider', () => {
     const days = buildYearCalendar({
       year: 2026,
       vacations: [],
-      vacationWeeklyHours: 35,
-      schoolWeeklyHours: 37,
-      schoolWorkdaysPerWeek: 4,
+      strategy: createPlanningStrategy(ATSEM, { school: 37, vacation: 35 }),
     }, { getHolidays: () => new Set(['2026-05-01']) });
     const mayDay = days.find((d) => d.date === '2026-05-01')!;
     expect(mayDay.isHoliday).toBe(true);

@@ -6,7 +6,7 @@ import { DEFAULT_YEAR } from '@/config/constants';
 import { getAnnualWarnings, summarizeYear } from '@/domain/summary/annualSummary';
 import { groupByMonth, summarizeMonths } from '@/domain/summary/monthlySummary';
 import { toLeaveParameters } from '@/domain/settings/normalize';
-import { getSchoolWorkdaysPerWeek } from '@/domain/settings/leaveProfiles';
+import { getPlanning } from '@/domain/settings/leaveProfiles';
 import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 import { createCalculatePlanning } from '@/handlers/planning/calculatePlanning';
 import { createChangePlanningSetting } from '@/handlers/planning/changePlanningSetting';
@@ -38,8 +38,9 @@ export function usePlanningPage(profiles: LeaveProfiles) {
     clearError: () => setCalculationError(''),
   });
 
-  const parameters = toLeaveParameters(appliedSettings, getSchoolWorkdaysPerWeek(profiles, appliedProfile));
-  const { cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, schoolWorkdaysPerWeek } = parameters;
+  const planning = getPlanning(profiles, appliedProfile);
+  const parameters = toLeaveParameters(appliedSettings, planning);
+  const { cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours } = parameters;
 
   useEffect(() => {
     services.preferences.writeSettings({ cpDays: cpQuota, rttDays: rttQuota, schoolWeeklyHours, vacationWeeklyHours });
@@ -55,11 +56,11 @@ export function usePlanningPage(profiles: LeaveProfiles) {
     () => computeYearPlan(
       year,
       vacations,
-      { cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, schoolWorkdaysPerWeek },
+      { cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, planning },
       NO_TRAINING_HOURS,
       services.holidays,
     ) ?? [],
-    [services, year, vacations, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, schoolWorkdaysPerWeek],
+    [services, year, vacations, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, planning],
   );
 
   const summary = summarizeYear(calendar, NO_TRAINING_HOURS);

@@ -1,12 +1,18 @@
 export const WEEKDAYS = [
-  { value: 'lundi', label: 'Lundi' },
-  { value: 'mardi', label: 'Mardi' },
-  { value: 'mercredi', label: 'Mercredi' },
-  { value: 'jeudi', label: 'Jeudi' },
-  { value: 'vendredi', label: 'Vendredi' },
+  { value: 'lundi', label: 'Lundi', number: 1 },
+  { value: 'mardi', label: 'Mardi', number: 2 },
+  { value: 'mercredi', label: 'Mercredi', number: 3 },
+  { value: 'jeudi', label: 'Jeudi', number: 4 },
+  { value: 'vendredi', label: 'Vendredi', number: 5 },
 ] as const;
 
 export const WEEKDAY_SEPARATOR = ',';
+
+/** Weekday numbers (`Date#getUTCDay` convention) of a stored list. */
+export function toWeekdayNumbers(value: string | null | undefined): number[] {
+  const selected = new Set(parseWeekdays(value ?? ''));
+  return WEEKDAYS.filter((day) => selected.has(day.value)).map((day) => day.number);
+}
 
 /** Reads a stored list ("lundi,mercredi"), tolerating spaces and case, ignoring unknown values. */
 export function parseWeekdays(value: string): string[] {

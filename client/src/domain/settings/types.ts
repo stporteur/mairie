@@ -1,3 +1,5 @@
+import type { PlanningDescriptor } from '../planning/types';
+
 export const CUSTOM_PROFILE = 'custom';
 
 /** Key of a profile coming from the catalog, or `CUSTOM_PROFILE` for free values. */
@@ -19,7 +21,7 @@ export interface LeaveProfile {
   rttDays: string;
   vacationWeeklyHours: string;
   schoolWeeklyHours: string;
-  schoolWorkdaysPerWeek: number;
+  planning: PlanningDescriptor;
 }
 
 export type LeaveProfiles = readonly LeaveProfile[];
@@ -30,5 +32,5 @@ export interface LeaveParameters {
   rttQuota: number;
   schoolWeeklyHours: number;
   vacationWeeklyHours: number;
-  schoolWorkdaysPerWeek: number;
+  planning: PlanningDescriptor;
 }

@@ -4,7 +4,7 @@ export interface CalendarDay {
   isWeekend: boolean;
   isHoliday: boolean;
   inVacation: boolean;
-  isWednesdayRest: boolean;
+  isRestDay: boolean;
   isWorkday: boolean;
   defaultHours: number;
   vacationName: string | null;

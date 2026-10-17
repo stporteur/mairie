@@ -4,12 +4,13 @@ import { buildCalendarExportRequest } from '@/application/buildCalendarExportReq
 import { computeYearPlan } from '@/application/computeYearPlan';
 import { getAnnualWarnings, summarizeYear } from '@/domain/summary/annualSummary';
 import { summarizeMonths } from '@/domain/summary/monthlySummary';
+import { DEFAULT_PLANNING } from '@/domain/planning/createPlanningStrategy';
 import { toLeaveParameters } from '@/domain/settings/normalize';
 import type { LeaveSettings } from '@/domain/settings/types';
 
 const holidays = { getHolidays: () => new Set<string>() };
 const settings: LeaveSettings = { cpDays: '25', rttDays: '9', schoolWeeklyHours: '37', vacationWeeklyHours: '35' };
-const parameters = toLeaveParameters(settings, 4);
+const parameters = toLeaveParameters(settings, DEFAULT_PLANNING);
 
 function response(year: number): VacationsResponse {
   return {
@@ -80,7 +81,7 @@ describe('computeYearPlan and summaries', () => {
     expect(request).toMatchObject({ year: 2026, profile: '36h30 ATSEM' });
     expect(request.days).toHaveLength(365);
     expect(Object.keys(request.days[0]).sort()).toEqual([
-      'date', 'effectiveHours', 'inVacation', 'isCp', 'isHoliday', 'isRtt', 'isWednesdayRest', 'isWeekend', 'vacationEstimated',
+      'date', 'effectiveHours', 'inVacation', 'isCp', 'isHoliday', 'isRestDay', 'isRtt', 'isWeekend', 'vacationEstimated',
     ]);
   });
 });

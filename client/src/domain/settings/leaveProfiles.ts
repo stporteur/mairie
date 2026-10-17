@@ -1,3 +1,5 @@
+import { DEFAULT_PLANNING } from '../planning/createPlanningStrategy';
+import type { PlanningDescriptor } from '../planning/types';
 import type { LeaveProfile, LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from './types';
 import { CUSTOM_PROFILE } from './types';
 
@@ -7,9 +9,6 @@ export const DEFAULT_LEAVE_SETTINGS: LeaveSettings = {
   schoolWeeklyHours: '37',
   vacationWeeklyHours: '35',
 };
-
-/** School week length used when no catalog profile is selected. */
-export const DEFAULT_SCHOOL_WORKDAYS_PER_WEEK = 4;
 
 export function findProfile(profiles: LeaveProfiles, key: SelectedLeaveProfile): LeaveProfile | undefined {
   return profiles.find((profile) => profile.key === key);
@@ -23,8 +22,9 @@ export function getProfileLabel(profiles: LeaveProfiles, profile: SelectedLeaveP
   return findProfile(profiles, profile)?.label ?? 'Custom';
 }
 
-export function getSchoolWorkdaysPerWeek(profiles: LeaveProfiles, profile: SelectedLeaveProfile): number {
-  return findProfile(profiles, profile)?.schoolWorkdaysPerWeek ?? DEFAULT_SCHOOL_WORKDAYS_PER_WEEK;
+/** The working-week description of the profile; free values use the default planning. */
+export function getPlanning(profiles: LeaveProfiles, profile: SelectedLeaveProfile): PlanningDescriptor {
+  return findProfile(profiles, profile)?.planning ?? DEFAULT_PLANNING;
 }
 
 export function findMatchingProfile(profiles: LeaveProfiles, settings: LeaveSettings): SelectedLeaveProfile {

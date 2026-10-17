@@ -1,6 +1,7 @@
 import { loadLeaveState } from '@/application/loadLeaveState';
 import { forecastFilename, planningFilename } from '@/domain/export/filenames';
-import { applyProfileToSettings, findMatchingProfile, getProfileLabel, getSchoolWorkdaysPerWeek } from '@/domain/settings/leaveProfiles';
+import { applyProfileToSettings, findMatchingProfile, getPlanning, getProfileLabel } from '@/domain/settings/leaveProfiles';
+import { DEFAULT_PLANNING } from '@/domain/planning/createPlanningStrategy';
 import {
   normalizeLeaveSettings,
   normalizeQuota,
@@ -43,10 +44,10 @@ describe('normalization', () => {
     expect(normalizeSettingValue('rttDays', '12')).toBe('12');
   });
 
-  it('derives calculation parameters and the weekly workdays from the profile', () => {
-    expect(getSchoolWorkdaysPerWeek(PROFILES, 'mairie375')).toBe(5);
-    expect(getSchoolWorkdaysPerWeek(PROFILES, 'custom')).toBe(4);
-    expect(toLeaveParameters(atsem365, 4)).toMatchObject({ cpQuota: 25, rttQuota: 9, schoolWorkdaysPerWeek: 4 });
+  it('derives calculation parameters and the planning from the profile', () => {
+    expect(getPlanning(PROFILES, 'mairie375').type).toBe('STANDARD');
+    expect(getPlanning(PROFILES, 'custom')).toEqual(DEFAULT_PLANNING);
+    expect(toLeaveParameters(atsem365, DEFAULT_PLANNING)).toMatchObject({ cpQuota: 25, rttQuota: 9, planning: DEFAULT_PLANNING });
   });
 });
 

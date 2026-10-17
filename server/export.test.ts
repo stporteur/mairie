@@ -11,16 +11,16 @@ const days = Array.from({ length: 365 }, (_, index) => {
   const isHoliday = isoDate === '2029-01-01';
   const isVacationDay = (isoDate >= '2029-07-07' && isoDate <= '2029-07-20') || isoDate === '2029-01-02';
   const isVacationWorkday = isoDate === '2029-07-09' || isoDate === '2029-01-02';
-  const isWednesdayRest = weekday === 3;
+  const isRestDay = weekday === 3;
 
   return {
     date: isoDate,
-    effectiveHours: isWeekend || isHoliday || isWednesdayRest || (isVacationDay && !isVacationWorkday) ? 0 : 9.25,
+    effectiveHours: isWeekend || isHoliday || isRestDay || (isVacationDay && !isVacationWorkday) ? 0 : 9.25,
     isWeekend,
     isHoliday,
     inVacation: isVacationDay,
     vacationEstimated: isoDate >= '2029-07-07' && isoDate <= '2029-07-20',
-    isWednesdayRest,
+    isRestDay,
     isCp: isoDate === '2029-07-11',
     isRtt: isoDate === '2029-07-12',
   };

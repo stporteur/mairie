@@ -1,6 +1,6 @@
 import { computeForecast } from '@/application/computeForecast';
 import type { AppServices } from '@/application/AppServices';
-import { getSchoolWorkdaysPerWeek } from '@/domain/settings/leaveProfiles';
+import { getPlanning } from '@/domain/settings/leaveProfiles';
 import { normalizeLeaveSettings, toLeaveParameters } from '@/domain/settings/normalize';
 import { validateForecastSettings } from '@/domain/settings/validate';
 import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
@@ -34,7 +34,7 @@ export function createCalculateForecast(deps: CalculateForecastDeps) {
     try {
       const rows = await computeForecast({
         startYear: deps.startYear,
-        parameters: toLeaveParameters(deps.settings, getSchoolWorkdaysPerWeek(deps.profiles, deps.profile)),
+        parameters: toLeaveParameters(deps.settings, getPlanning(deps.profiles, deps.profile)),
         onProgress: (year, index, total) => deps.setProgress(`Calcul de ${year} (${index}/${total})…`),
       }, deps.services);
 

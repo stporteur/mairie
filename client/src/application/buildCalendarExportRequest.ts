@@ -16,7 +16,7 @@ export function buildCalendarExportRequest(
       isHoliday: day.isHoliday,
       inVacation: day.inVacation,
       vacationEstimated: day.vacationEstimated,
-      isWednesdayRest: day.isWednesdayRest,
+      isRestDay: day.isRestDay,
       isCp: day.isCp,
       isRtt: day.isRtt,
     })),

@@ -5,7 +5,7 @@ export interface ExportCalendarDay {
   isHoliday: boolean;
   inVacation: boolean;
   vacationEstimated: boolean;
-  isWednesdayRest: boolean;
+  isRestDay: boolean;
   isCp: boolean;
   isRtt: boolean;
 }
