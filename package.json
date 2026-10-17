@@ -6,7 +6,8 @@
   "scripts": {
     "postinstall": "npm install --prefix client",
     "start": "ts-node server/index.ts",
-    "dev": "concurrently \"npm run dev --prefix client\" \"nodemon\"",
+    "dev": "concurrently \"npm run dev --prefix client\" \"npm run dev:server\"",
+    "dev:server": "node --watch-path=server --watch-path=shared --require ts-node/register server/index.ts",
     "build": "npm run build --prefix client",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:legacy": "ts-node --project server/tsconfig.json server/vacations.test.ts && ts-node --project server/tsconfig.json server/export.test.ts && ts-node --project server/tsconfig.json server/forecastExport.test.ts",
@@ -25,9 +26,13 @@
     "@types/react-dom": "^19.2.3",
     "concurrently": "^8.2.2",
     "jest": "^30.5.2",
-    "nodemon": "^3.0.1",
+    "jest-util": "^30.5.1",
     "ts-jest": "^29.4.15",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "uuid": "^11.1.1",
+    "js-yaml": "^4.1.1"
   }
 }

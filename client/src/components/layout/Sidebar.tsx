@@ -1,42 +1,32 @@
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import InsightsIcon from '@mui/icons-material/Insights';
-import type { ReactNode } from 'react';
-import { PAGES, type PageName } from '@/config/constants';
+import { NavLink } from 'react-router-dom';
+import type { PageDefinition } from '@/pages/pageRegistry';
 
 interface SidebarProps {
+  pages: readonly PageDefinition[];
   open: boolean;
-  activePage: PageName;
-  onSelectPage: (page: PageName) => void;
   onToggle: () => void;
 }
 
-const NAV_ICONS: Record<PageName, ReactNode> = {
-  planning: <CalendarMonthIcon />,
-  forecast: <InsightsIcon />,
-};
-
-function Sidebar({ open, activePage, onSelectPage, onToggle }: SidebarProps) {
+function Sidebar({ pages, open, onToggle }: SidebarProps) {
   const toggleLabel = open ? 'Replier le menu' : 'Déplier le menu';
 
   return (
     <aside className={`sidebar ${open ? 'open' : 'closed'}`}>
       <div className="brand"><span>L'Haÿ-les-Roses</span></div>
       <nav>
-        {(Object.keys(PAGES) as PageName[]).map((page) => (
-          <button
-            key={page}
-            className={`nav-item ${activePage === page ? 'active' : ''}`}
-            type="button"
-            onClick={() => onSelectPage(page)}
-            aria-current={activePage === page ? 'page' : undefined}
-            aria-label={PAGES[page].title}
-            title={PAGES[page].title}
+        {pages.map((page) => (
+          <NavLink
+            key={page.path}
+            to={`/${page.path}`}
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            aria-label={page.title}
+            title={page.title}
           >
-            {NAV_ICONS[page]}
-            <span className="nav-label">{PAGES[page].title}</span>
-          </button>
+            {page.icon}
+            <span className="nav-label">{page.title}</span>
+          </NavLink>
         ))}
       </nav>
       <button className="sidebar-toggle" type="button" onClick={onToggle} title={toggleLabel} aria-label={toggleLabel} aria-expanded={open}>

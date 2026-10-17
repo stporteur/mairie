@@ -115,6 +115,7 @@ button {
   background: rgba(255, 255, 255, 0.08);
   color: #f8fafc;
   font-weight: 600;
+  text-decoration: none;
 }
 
 .nav-item svg {
