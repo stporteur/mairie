@@ -6,7 +6,7 @@ import {
   isSelectedLeaveProfile,
 } from '@/domain/settings/leaveProfiles';
 import { normalizeLeaveSettings, normalizeSchoolWeeklyHours } from '@/domain/settings/normalize';
-import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import { CUSTOM_PROFILE, type LeaveProfiles, type LeaveSettings, type SelectedLeaveProfile } from '@/domain/settings/types';
 
 export interface LeaveState {
   selectedProfile: SelectedLeaveProfile;
@@ -35,18 +35,26 @@ function readAppliedSettings(store: LeavePreferencesStore): LeaveSettings {
 }
 
 function profileOrMatching(profiles: LeaveProfiles, saved: string | null, settings: LeaveSettings): SelectedLeaveProfile {
-  return isSelectedLeaveProfile(profiles, saved) ? saved : findMatchingProfile(profiles, settings);
+  if (isSelectedLeaveProfile(profiles, saved)) return saved;
+  const matching = findMatchingProfile(profiles, settings);
+  // Nothing saved or matching: start on the first catalog profile rather than on free values.
+  return matching === CUSTOM_PROFILE && profiles.length > 0 ? profiles[0].key : matching;
 }
 
 /** Restores the leave state saved by the user, falling back to the profile matching the saved values. */
 export function loadLeaveState(store: LeavePreferencesStore, profiles: LeaveProfiles): LeaveState {
-  const appliedSettings = readAppliedSettings(store);
-  const selectedProfile = profileOrMatching(profiles, store.readProfile(), appliedSettings);
+  const savedSettings = readAppliedSettings(store);
+  const selectedProfile = profileOrMatching(profiles, store.readProfile(), savedSettings);
+  const appliedProfile = profileOrMatching(profiles, store.readAppliedProfile(), savedSettings);
+  // A profile chosen by default carries its own values.
+  const appliedSettings = isSelectedLeaveProfile(profiles, store.readAppliedProfile())
+    ? savedSettings
+    : applyProfileToSettings(profiles, savedSettings, appliedProfile);
 
   return {
     selectedProfile,
-    draftSettings: applyProfileToSettings(profiles, appliedSettings, selectedProfile),
+    draftSettings: applyProfileToSettings(profiles, savedSettings, selectedProfile),
     appliedSettings,
-    appliedProfile: profileOrMatching(profiles, store.readAppliedProfile(), appliedSettings),
+    appliedProfile,
   };
 }
