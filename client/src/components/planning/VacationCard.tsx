@@ -22,8 +22,8 @@ function VacationSourceText({ source }: { source: VacationSource }) {
 
 function VacationCard({ year, vacations, source, onYearChange, onVacationChange }: VacationCardProps) {
   return (
-    <div className="card">
-      <h2>Vacances scolaires</h2>
+    <details className="card collapsible-card">
+      <summary><h2>Vacances scolaires</h2></summary>
       <div className="field-row">
         <label>
           Année
@@ -48,7 +48,7 @@ function VacationCard({ year, vacations, source, onYearChange, onVacationChange 
       ) : (
         <p className="alert">Vacances scolaires non disponibles pour {year}</p>
       )}
-    </div>
+    </details>
   );
 }
 

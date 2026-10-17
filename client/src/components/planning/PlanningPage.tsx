@@ -1,3 +1,4 @@
+import { NO_PROFILE } from '@/domain/settings/types';
 import type { PlanningPageModel } from '@/hooks/usePlanningPage';
 import ExportBar from '../common/ExportBar';
 import LeaveSettingsCard from './LeaveSettingsCard';
@@ -8,6 +9,8 @@ import VacationCard from './VacationCard';
 import WarningsSection from './WarningsSection';
 
 function PlanningPage({ model }: { model: PlanningPageModel }) {
+  const hasProfile = model.profile !== NO_PROFILE;
+
   return (
     <>
       <section className="config-panel">
@@ -15,36 +18,42 @@ function PlanningPage({ model }: { model: PlanningPageModel }) {
           settings={model.settings}
           profile={model.profile}
           profiles={model.profiles}
-          error={model.calculationError}
+          error={hasProfile ? model.calculationError : ''}
           onProfileChange={model.onProfileChange}
           onSettingChange={model.onSettingChange}
           onSettingBlur={model.onSettingBlur}
           onCalculate={model.onCalculate}
         />
-        <VacationCard
-          year={model.year}
-          vacations={model.vacations}
-          source={model.vacationSource}
-          onYearChange={model.onYearChange}
-          onVacationChange={model.onVacationChange}
-        />
+        {hasProfile ? (
+          <VacationCard
+            year={model.year}
+            vacations={model.vacations}
+            source={model.vacationSource}
+            onYearChange={model.onYearChange}
+            onVacationChange={model.onVacationChange}
+          />
+        ) : null}
       </section>
 
-      <section className="stats-grid">
-        <SummaryCard summary={model.summary} />
-      </section>
+      {hasProfile ? (
+        <>
+          <section className="stats-grid">
+            <SummaryCard summary={model.summary} />
+          </section>
 
-      <WarningsSection summary={model.summary} warnings={model.warnings} expectedLeave={model.expectedLeave} />
+          <WarningsSection summary={model.summary} warnings={model.warnings} expectedLeave={model.expectedLeave} />
 
-      <section className="month-cards">
-        {model.monthlyCalendars.map((days, monthIndex) => (
-          <MonthCard key={monthIndex} monthIndex={monthIndex} days={days} />
-        ))}
-      </section>
+          <section className="month-cards">
+            {model.monthlyCalendars.map((days, monthIndex) => (
+              <MonthCard key={monthIndex} monthIndex={monthIndex} days={days} />
+            ))}
+          </section>
 
-      <MonthlySummaryTable summaries={model.monthlySummaries} />
+          <MonthlySummaryTable summaries={model.monthlySummaries} />
 
-      <ExportBar error={model.exportError} exporting={model.exporting} disabled={!model.canExport} onExport={model.onExport} />
+          <ExportBar error={model.exportError} exporting={model.exporting} disabled={!model.canExport} onExport={model.onExport} />
+        </>
+      ) : null}
     </>
   );
 }

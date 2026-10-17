@@ -6,7 +6,8 @@ import { DEFAULT_YEAR } from '@/config/constants';
 import { getAnnualWarnings, summarizeYear } from '@/domain/summary/annualSummary';
 import { groupByMonth, summarizeMonths } from '@/domain/summary/monthlySummary';
 import { toLeaveParameters } from '@/domain/settings/normalize';
-import { getPlanning } from '@/domain/settings/leaveProfiles';
+import { applyProfileToSettings, getPlanning } from '@/domain/settings/leaveProfiles';
+import { CUSTOM_PROFILE, NO_PROFILE } from '@/domain/settings/types';
 import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 import { createCalculatePlanning } from '@/handlers/planning/calculatePlanning';
 import { createChangePlanningSetting } from '@/handlers/planning/changePlanningSetting';
@@ -21,7 +22,7 @@ const NO_TRAINING_HOURS: number[] = Array.from({ length: 12 }, () => 0);
 
 export function usePlanningPage(profiles: LeaveProfiles) {
   const services = useServices();
-  const [initial] = useState(() => loadLeaveState(services.preferences, profiles));
+  const [initial] = useState(() => loadLeaveState(services.preferences));
   const [year, setYear] = useState<number>(DEFAULT_YEAR);
   const [vacations, setVacations] = useState<VacationPeriod[]>([]);
   const [vacationSource, setVacationSource] = useState<VacationSource | null>(null);
@@ -45,22 +46,20 @@ export function usePlanningPage(profiles: LeaveProfiles) {
   useEffect(() => {
     services.preferences.writeSettings({ cpDays: cpQuota, rttDays: rttQuota, schoolWeeklyHours, vacationWeeklyHours });
   }, [services, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours]);
-  useEffect(() => services.preferences.writeProfile(form.profile), [services, form.profile]);
-  useEffect(() => services.preferences.writeAppliedProfile(appliedProfile), [services, appliedProfile]);
-
   useEffect(() => {
     createLoadVacations({ gateway: services.vacations, setVacations, setSource: setVacationSource })(year);
   }, [services, year]);
 
+  const hasProfile = appliedProfile !== NO_PROFILE;
   const calendar = useMemo(
-    () => computeYearPlan(
+    () => (hasProfile ? computeYearPlan(
       year,
       vacations,
       { cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, planning },
       NO_TRAINING_HOURS,
       services.holidays,
-    ) ?? [],
-    [services, year, vacations, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, planning],
+    ) : null) ?? [],
+    [services, year, vacations, hasProfile, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, planning],
   );
 
   const summary = summarizeYear(calendar, NO_TRAINING_HOURS);
@@ -84,12 +83,29 @@ export function usePlanningPage(profiles: LeaveProfiles) {
     canExport: calendar.length > 0 && !exporting,
     onYearChange: createChangeYear({ setYear }),
     onVacationChange: createEditVacationPeriod({ setVacations }),
-    onProfileChange: form.changeProfile,
+    onProfileChange: (selected: SelectedLeaveProfile) => {
+      form.changeProfile(selected);
+      if (selected === CUSTOM_PROFILE) return;
+      // An existing profile is applied right away; only Custom waits for « Calculer ».
+      createCalculatePlanning({
+        settings: applyProfileToSettings(profiles, form.settings, selected),
+        profile: selected,
+        setSettings: form.setSettings,
+        setAppliedSettings,
+        setAppliedProfile,
+        setError: setCalculationError,
+      })();
+    },
     onSettingChange: createChangePlanningSetting({
       changeLeaveSetting: form.changeSetting,
       clearError: () => setCalculationError(''),
     }),
     onSettingBlur: form.blurSetting,
+    onResetProfile: () => {
+      form.setProfile(NO_PROFILE);
+      setAppliedProfile(NO_PROFILE);
+      setCalculationError('');
+    },
     onCalculate: createCalculatePlanning({
       settings: form.settings,
       profile: form.profile,

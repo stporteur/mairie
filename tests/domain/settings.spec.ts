@@ -84,36 +84,29 @@ describe('profiles', () => {
 });
 
 describe('loadLeaveState', () => {
-  it('defaults to the profile matching the default settings', () => {
-    expect(loadLeaveState(fakeStore(), PROFILES)).toEqual({
-      selectedProfile: 'atsem365',
+  it('selects no profile by default', () => {
+    expect(loadLeaveState(fakeStore())).toEqual({
+      selectedProfile: '',
       draftSettings: atsem365,
       appliedSettings: atsem365,
-      appliedProfile: 'atsem365',
+      appliedProfile: '',
     });
   });
 
-  it('restores saved settings and profiles', () => {
+  it('restores the saved settings but never the saved profile', () => {
     const state = loadLeaveState(fakeStore({
       settings: { cpDays: 20, rttDays: 15, schoolWeeklyHours: 37.5, vacationWeeklyHours: 37.5 },
       profile: 'custom',
       applied: 'mairie375',
-    }), PROFILES);
+    }));
     expect(state.appliedSettings.cpDays).toBe('20');
-    expect(state.selectedProfile).toBe('custom');
-    expect(state.draftSettings).toMatchObject({ cpDays: '20', rttDays: '' });
-    expect(state.appliedProfile).toBe('mairie375');
+    expect(state.selectedProfile).toBe('');
+    expect(state.appliedProfile).toBe('');
   });
 
   it('reverts invalid saved school hours to the default', () => {
-    const state = loadLeaveState(fakeStore({ settings: { schoolWeeklyHours: 99 } }), PROFILES);
+    const state = loadLeaveState(fakeStore({ settings: { schoolWeeklyHours: 99 } }));
     expect(state.appliedSettings.schoolWeeklyHours).toBe('37');
-  });
-
-  it('ignores a saved profile that is no longer in the catalog', () => {
-    const state = loadLeaveState(fakeStore({ profile: 'gone', applied: 'gone' }), PROFILES);
-    expect(state.selectedProfile).toBe('atsem365');
-    expect(state.appliedProfile).toBe('atsem365');
   });
 });
 

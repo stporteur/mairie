@@ -20,6 +20,7 @@ export function useLeaveSettingsForm({ profiles, initialSettings, initialProfile
     settings,
     profile,
     setSettings,
+    setProfile,
     changeSetting: createChangeLeaveSetting({ setSettings, setProfile }),
     changeProfile: createChangeLeaveProfile({ profiles, setSettings, setProfile, clearError }),
     blurSetting: createBlurLeaveSetting({ settings, setSettings }),

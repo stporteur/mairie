@@ -1,4 +1,5 @@
 import { FORECAST_YEAR_COUNT } from '@/config/constants';
+import { CUSTOM_PROFILE } from '@/domain/settings/types';
 import type { ForecastPageModel } from '@/hooks/useForecastPage';
 import Alert from '../common/Alert';
 import ExportBar from '../common/ExportBar';
@@ -20,12 +21,14 @@ function ForecastView({ model }: { model: ForecastPageModel }) {
           onProfileChange={model.onProfileChange}
           onSettingChange={model.onSettingChange}
         >
-          <p className="help-text">Années calculées : {startYear}–{startYear + FORECAST_YEAR_COUNT - 1}. Les paramètres s’appliquent au prévisionnel après « Calculer ».</p>
+          <p className="help-text">Années calculées : {startYear}–{startYear + FORECAST_YEAR_COUNT - 1}. {model.profile === CUSTOM_PROFILE ? 'Les paramètres personnalisés s’appliquent après « Calculer ».' : 'Le choix d’un profil lance le calcul.'}</p>
           {model.error ? <Alert role="alert">{model.error}</Alert> : null}
           {model.progress ? <p className="help-text" role="status">{model.progress}</p> : null}
-          <button className="primary-button calculate-button" type="button" onClick={model.onCalculate} disabled={model.calculating}>
-            {model.calculating ? 'Calcul en cours…' : 'Calculer'}
-          </button>
+          {model.profile === CUSTOM_PROFILE ? (
+            <button className="primary-button calculate-button" type="button" onClick={model.onCalculate} disabled={model.calculating}>
+              {model.calculating ? 'Calcul en cours…' : 'Calculer'}
+            </button>
+          ) : null}
         </LeaveSettingsPanel>
       </section>
 

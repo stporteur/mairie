@@ -300,6 +300,39 @@ button {
   font-size: 1.2rem;
 }
 
+.collapsible-card > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+}
+
+.collapsible-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-card > summary h2 {
+  margin: 0;
+}
+
+.collapsible-card > summary::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.collapsible-card[open] > summary {
+  margin-bottom: 12px;
+}
+
+.collapsible-card[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
 .field-row {
   display: flex;
   flex-wrap: wrap;

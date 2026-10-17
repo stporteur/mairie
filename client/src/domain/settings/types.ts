@@ -1,8 +1,10 @@
 import type { PlanningDescriptor } from '../planning/types';
 
 export const CUSTOM_PROFILE = 'custom';
+/** Nothing selected yet: the initial state of every page. */
+export const NO_PROFILE = '';
 
-/** Key of a profile coming from the catalog, or `CUSTOM_PROFILE` for free values. */
+/** Key of a profile coming from the catalog, `CUSTOM_PROFILE` for free values, or `NO_PROFILE`. */
 export type SelectedLeaveProfile = string;
 
 /** Form values, kept as strings so that fields can be empty while typing. */

@@ -1,6 +1,6 @@
 import Alert from '../common/Alert';
 import LeaveSettingsPanel from '../common/LeaveSettingsPanel';
-import type { LeaveProfiles, LeaveSettingKey, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import { CUSTOM_PROFILE, type LeaveProfiles, LeaveSettingKey, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 
 interface LeaveSettingsCardProps {
   settings: LeaveSettings;
@@ -16,6 +16,8 @@ interface LeaveSettingsCardProps {
 function LeaveSettingsCard({
   settings, profile, profiles, error, onProfileChange, onSettingChange, onSettingBlur, onCalculate,
 }: LeaveSettingsCardProps) {
+  const isCustom = profile === CUSTOM_PROFILE;
+
   return (
     <LeaveSettingsPanel
       profileGroupName="leave-profile"
@@ -27,9 +29,9 @@ function LeaveSettingsCard({
       onSettingChange={onSettingChange}
       onSettingBlur={onSettingBlur}
     >
-      <p className="help-text">Les paramètres sont appliqués au calendrier uniquement après clic sur « Calculer ».</p>
+      {isCustom ? <p className="help-text">Les paramètres personnalisés sont appliqués au calendrier après clic sur « Calculer ».</p> : null}
       {error ? <Alert role="alert">{error}</Alert> : null}
-      <button className="primary-button calculate-button" type="button" onClick={onCalculate}>Calculer</button>
+      {isCustom ? <button className="primary-button calculate-button" type="button" onClick={onCalculate}>Calculer</button> : null}
     </LeaveSettingsPanel>
   );
 }

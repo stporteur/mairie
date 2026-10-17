@@ -1,12 +1,7 @@
 import type { LeavePreferencesStore } from '@/ports/LeavePreferencesStore';
-import {
-  applyProfileToSettings,
-  DEFAULT_LEAVE_SETTINGS,
-  findMatchingProfile,
-  isSelectedLeaveProfile,
-} from '@/domain/settings/leaveProfiles';
+import { DEFAULT_LEAVE_SETTINGS } from '@/domain/settings/leaveProfiles';
 import { normalizeLeaveSettings, normalizeSchoolWeeklyHours } from '@/domain/settings/normalize';
-import { CUSTOM_PROFILE, type LeaveProfiles, type LeaveSettings, type SelectedLeaveProfile } from '@/domain/settings/types';
+import { NO_PROFILE, type LeaveSettings, type SelectedLeaveProfile } from '@/domain/settings/types';
 
 export interface LeaveState {
   selectedProfile: SelectedLeaveProfile;
@@ -34,27 +29,14 @@ function readAppliedSettings(store: LeavePreferencesStore): LeaveSettings {
   };
 }
 
-function profileOrMatching(profiles: LeaveProfiles, saved: string | null, settings: LeaveSettings): SelectedLeaveProfile {
-  if (isSelectedLeaveProfile(profiles, saved)) return saved;
-  const matching = findMatchingProfile(profiles, settings);
-  // Nothing saved or matching: start on the first catalog profile rather than on free values.
-  return matching === CUSTOM_PROFILE && profiles.length > 0 ? profiles[0].key : matching;
-}
-
-/** Restores the leave state saved by the user, falling back to the profile matching the saved values. */
-export function loadLeaveState(store: LeavePreferencesStore, profiles: LeaveProfiles): LeaveState {
+/** Restores the saved values; no profile is selected until the user picks one. */
+export function loadLeaveState(store: LeavePreferencesStore): LeaveState {
   const savedSettings = readAppliedSettings(store);
-  const selectedProfile = profileOrMatching(profiles, store.readProfile(), savedSettings);
-  const appliedProfile = profileOrMatching(profiles, store.readAppliedProfile(), savedSettings);
-  // A profile chosen by default carries its own values.
-  const appliedSettings = isSelectedLeaveProfile(profiles, store.readAppliedProfile())
-    ? savedSettings
-    : applyProfileToSettings(profiles, savedSettings, appliedProfile);
 
   return {
-    selectedProfile,
-    draftSettings: applyProfileToSettings(profiles, savedSettings, selectedProfile),
-    appliedSettings,
-    appliedProfile,
+    selectedProfile: NO_PROFILE,
+    draftSettings: savedSettings,
+    appliedSettings: savedSettings,
+    appliedProfile: NO_PROFILE,
   };
 }

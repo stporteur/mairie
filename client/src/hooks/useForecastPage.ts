@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ForecastSummaryRow } from '@shared/types/forecast';
-import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import { applyProfileToSettings } from '@/domain/settings/leaveProfiles';
+import { CUSTOM_PROFILE, type LeaveProfiles, type LeaveSettings, type SelectedLeaveProfile } from '@/domain/settings/types';
 import { createCalculateForecast } from '@/handlers/forecast/calculateForecast';
 import { createExportForecast } from '@/handlers/forecast/exportForecast';
 import { useLeaveSettingsForm } from './useLeaveSettingsForm';
@@ -28,6 +29,26 @@ export function useForecastPage({ startYear, profiles, initialSettings, initialP
     clearError: () => setError(''),
   });
 
+  const calculateFor = (settings: LeaveSettings, profile: SelectedLeaveProfile) => createCalculateForecast({
+    startYear,
+    settings,
+    profiles,
+    profile,
+    setSettings: form.setSettings,
+    setRows,
+    setCalculating,
+    setProgress,
+    setError,
+    services,
+  });
+
+  const changeProfile = (selected: SelectedLeaveProfile): void => {
+    form.changeProfile(selected);
+    if (selected === CUSTOM_PROFILE) return;
+    // An existing profile is applied right away; only Custom waits for « Calculer ».
+    void calculateFor(applyProfileToSettings(profiles, form.settings, selected), selected)();
+  };
+
   return {
     startYear,
     rows,
@@ -39,19 +60,8 @@ export function useForecastPage({ startYear, profiles, initialSettings, initialP
     profile: form.profile,
     profiles,
     onSettingChange: form.changeSetting,
-    onProfileChange: form.changeProfile,
-    onCalculate: createCalculateForecast({
-      startYear,
-      settings: form.settings,
-      profiles,
-      profile: form.profile,
-      setSettings: form.setSettings,
-      setRows,
-      setCalculating,
-      setProgress,
-      setError,
-      services,
-    }),
+    onProfileChange: changeProfile,
+    onCalculate: calculateFor(form.settings, form.profile),
     onExport: createExportForecast({
       startYear,
       profiles,

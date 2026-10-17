@@ -19,7 +19,7 @@ export interface PageDefinition {
 export const PAGES: readonly PageDefinition[] = [
   {
     path: 'planning',
-    title: 'Planning ATSEM',
+    title: 'Planning',
     subtitle: 'Analyse annuelle du temps de travail, des congés et de la formation.',
     icon: <CalendarMonthIcon />,
     component: lazy(() => import('./PlanningRoute')),
