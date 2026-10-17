@@ -2,41 +2,54 @@ import { useState } from 'react';
 import { buildYearCalendar } from '../services/calendar';
 import { allocateLeave } from '../services/leave';
 import { adjustVacationDates, fetchSchoolVacations } from '../services/api';
+import {
+  ForecastSummaryRow,
+  LeaveProfiles,
+  LeaveSettings,
+  SelectedLeaveProfile,
+} from '../types/planner';
 
-const DEFAULT_LEAVE_SETTINGS = {
-  cpDays: 25,
-  rttDays: 9,
-  schoolWeeklyHours: 37,
-  vacationWeeklyHours: 35,
+interface ForecastPageProps {
+  startYear: number;
+  profiles: LeaveProfiles;
+  initialSettings: LeaveSettings;
+  initialProfile: SelectedLeaveProfile;
+}
+
+const DEFAULT_LEAVE_SETTINGS: LeaveSettings = {
+  cpDays: '25',
+  rttDays: '9',
+  schoolWeeklyHours: '37',
+  vacationWeeklyHours: '35',
 };
 
-function normalizeQuota(value, fallback) {
+function normalizeQuota(value: string, fallback: number): number {
   if (value === '') return 0;
   const quota = Number(value);
   return Number.isInteger(quota) && quota >= 0 ? quota : fallback;
 }
 
-function normalizeWeeklyHours(value, fallback) {
+function normalizeWeeklyHours(value: string, fallback: number): number {
   if (value === '') return 0;
   const hours = Number(value);
   return Number.isFinite(hours) && hours >= 0 ? hours : fallback;
 }
 
-function ForecastPage({ startYear, profiles, initialSettings, initialProfile }) {
-  const [settings, setSettings] = useState(() => ({ ...initialSettings }));
-  const [selectedProfile, setSelectedProfile] = useState(initialProfile);
-  const [rows, setRows] = useState([]);
+function ForecastPage({ startYear, profiles, initialSettings, initialProfile }: ForecastPageProps) {
+  const [settings, setSettings] = useState<LeaveSettings>(() => ({ ...initialSettings }));
+  const [selectedProfile, setSelectedProfile] = useState<SelectedLeaveProfile>(initialProfile);
+  const [rows, setRows] = useState<ForecastSummaryRow[]>([]);
   const [calculating, setCalculating] = useState(false);
   const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
 
-  const handleSettingChange = (key, value) => {
+  const handleSettingChange = (key: keyof LeaveSettings, value: string) => {
     setSettings((current) => ({ ...current, [key]: value }));
     if (key !== 'cpDays') setSelectedProfile('custom');
   };
 
-  const handleProfileChange = (profileKey) => {
+  const handleProfileChange = (profileKey: SelectedLeaveProfile) => {
     setSelectedProfile(profileKey);
     if (profileKey === 'custom') {
       setSettings((current) => ({
@@ -77,12 +90,12 @@ function ForecastPage({ startYear, profiles, initialSettings, initialProfile }) 
       return;
     }
 
-    const cpQuota = normalizeQuota(settings.cpDays, DEFAULT_LEAVE_SETTINGS.cpDays);
-    const rttQuota = normalizeQuota(settings.rttDays, DEFAULT_LEAVE_SETTINGS.rttDays);
-    const schoolWeeklyHours = normalizeWeeklyHours(settings.schoolWeeklyHours, DEFAULT_LEAVE_SETTINGS.schoolWeeklyHours);
-    const vacationWeeklyHours = normalizeWeeklyHours(settings.vacationWeeklyHours, DEFAULT_LEAVE_SETTINGS.vacationWeeklyHours);
+    const cpQuota = normalizeQuota(settings.cpDays, Number(DEFAULT_LEAVE_SETTINGS.cpDays));
+    const rttQuota = normalizeQuota(settings.rttDays, Number(DEFAULT_LEAVE_SETTINGS.rttDays));
+    const schoolWeeklyHours = normalizeWeeklyHours(settings.schoolWeeklyHours, Number(DEFAULT_LEAVE_SETTINGS.schoolWeeklyHours));
+    const vacationWeeklyHours = normalizeWeeklyHours(settings.vacationWeeklyHours, Number(DEFAULT_LEAVE_SETTINGS.vacationWeeklyHours));
     const schoolWorkdaysPerWeek = selectedProfile === 'mairie375' ? 5 : 4;
-    const nextRows = [];
+    const nextRows: ForecastSummaryRow[] = [];
 
     setCalculating(true);
     setError('');
@@ -149,12 +162,12 @@ function ForecastPage({ startYear, profiles, initialSettings, initialProfile }) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           startYear,
-          profile: profiles[selectedProfile]?.label || 'Custom',
+          profile: profiles[selectedProfile as keyof LeaveProfiles]?.label || 'Custom',
           rows,
         }),
       });
       if (!response.ok) {
-        const result = await response.json().catch(() => null);
+        const result: { error?: string } | null = await response.json().catch(() => null);
         throw new Error(result?.error || `Échec de l’export (${response.status}).`);
       }
 
@@ -162,7 +175,7 @@ function ForecastPage({ startYear, profiles, initialSettings, initialProfile }) 
       const url = URL.createObjectURL(file);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Previsionnel_${startYear}_${profiles[selectedProfile]?.label || 'Custom'}`
+      link.download = `Previsionnel_${startYear}_${profiles[selectedProfile as keyof LeaveProfiles]?.label || 'Custom'}`
         .replace(/[^a-zA-Z0-9_]+/g, '_')
         .replace(/^_+|_+$/g, '') + '.xlsx';
       document.body.appendChild(link);
@@ -189,7 +202,7 @@ function ForecastPage({ startYear, profiles, initialSettings, initialProfile }) 
                   name="forecast-leave-profile"
                   value={profileKey}
                   checked={selectedProfile === profileKey}
-                  onChange={() => handleProfileChange(profileKey)}
+                  onChange={() => handleProfileChange(profileKey as SelectedLeaveProfile)}
                 />
                 <span>
                   <strong>{profile.label}</strong>

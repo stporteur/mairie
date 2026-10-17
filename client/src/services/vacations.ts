@@ -42,7 +42,7 @@ export function createHolidaySet(year: number): Set<string> {
 }
 
 // Find vacation periods matching specific keywords
-export function findVacationPeriods(vacations: VacationPeriod[], keywords: string[]): VacationPeriod[] {
+export function findVacationPeriods(vacations: VacationPeriod[], keywords: readonly string[]): VacationPeriod[] {
   return vacations.filter((vacation) =>
     keywords.some((keyword) => vacation.name.toLowerCase().includes(keyword)),
   );

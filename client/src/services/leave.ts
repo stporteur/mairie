@@ -1,10 +1,10 @@
 import { getPentecostMonday } from '../utils/date';
 import { findVacationPeriods } from './vacations';
 import { VACATION_KEYWORDS } from '../utils/constants';
-import { CalendarDay } from './calendar';
+import { AllocatedCalendarDay, CalendarDay } from './calendar';
 
 export interface LeaveAllocation {
-  calendar: CalendarDay[];
+  calendar: AllocatedCalendarDay[];
   cpDates: Set<string>;
   rttDates: Set<string>;
 }
@@ -128,7 +128,7 @@ export function allocateLeave(
     isCp: cpDates.has(day.date),
     isRtt: rttDates.has(day.date),
     effectiveHours: cpDates.has(day.date) || rttDates.has(day.date) ? 0 : day.defaultHours,
-  }));
+  })) as AllocatedCalendarDay[];
 
   return {
     calendar: allDates,

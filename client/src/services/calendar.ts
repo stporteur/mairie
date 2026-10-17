@@ -16,6 +16,14 @@ export interface CalendarDay {
   isRtt: boolean;
 }
 
+export interface AllocatedCalendarDay extends CalendarDay {
+  effectiveHours: number;
+}
+
+export interface TrainingCalendarDay extends AllocatedCalendarDay {
+  trainingHours: number;
+}
+
 function getSchoolHoursByWeekday(schoolWeeklyHours: number, schoolWorkdaysPerWeek: number): Map<number, number> {
   const totalQuarterHours = Math.round(schoolWeeklyHours * 4);
   const weekdays = schoolWorkdaysPerWeek === 5 ? [1, 2, 3, 4, 5] : [1, 2, 4, 5];

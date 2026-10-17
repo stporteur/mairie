@@ -7,10 +7,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
-    "baseUrl": ".",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "paths": {
-      "@/*": ["client/src/*"]
+      "@/*": ["./client/src/*"]
     }
   },
   "include": ["client/src/**/*"],
