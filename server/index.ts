@@ -4,6 +4,7 @@ import { loadEnvFile } from './infrastructure/loadEnvFile';
 import { createDataGouvOfficialVacationsSource } from './infrastructure/officialVacations/officialVacationsSources';
 import { createOrm } from './infrastructure/persistence/createOrm';
 import { MikroOrmParametersRepository } from './infrastructure/persistence/MikroOrmParametersRepository';
+import { MikroOrmPlanningTypesRepository } from './infrastructure/persistence/MikroOrmPlanningTypesRepository';
 
 const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 
@@ -15,6 +16,7 @@ async function main(): Promise<void> {
     clientDist: path.resolve(__dirname, '../client/dist'),
     officialVacations: createDataGouvOfficialVacationsSource(),
     parameters: new MikroOrmParametersRepository(orm),
+    planningTypes: new MikroOrmPlanningTypesRepository(orm),
   });
 
   const server = app.listen(port, () => {

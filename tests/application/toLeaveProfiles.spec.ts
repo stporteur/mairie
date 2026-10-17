@@ -2,12 +2,12 @@ import type { ParameterProfile } from '@shared/types/parameters';
 import { toLeaveProfiles } from '@/application/toLeaveProfiles';
 
 const atsem: ParameterProfile = {
-  id: 1, name: 'ATSEM 37h30', planningType: 'ATSEM', holidays: 25, rtt: 15,
+  id: 1, name: 'ATSEM 37h30', planningTypeId: 2, planningType: 'ATSEM', holidays: 25, rtt: 15,
   atsem: { holidayPeriodOffdays: null, holidayPeriodHours: 35, schoolPeriodOffdays: 'mercredi', schoolPeriodHours: 37 },
   standard: null,
 };
 const standard: ParameterProfile = {
-  id: 3, name: 'MAIRIE 37h30', planningType: 'STANDARD', holidays: 25, rtt: 15,
+  id: 3, name: 'MAIRIE 37h30', planningTypeId: 1, planningType: 'STANDARD', holidays: 25, rtt: 15,
   atsem: null, standard: { weekHours: 37.5 },
 };
 

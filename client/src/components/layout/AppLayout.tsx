@@ -8,7 +8,7 @@ import Sidebar from './Sidebar';
 function AppLayout() {
   const sidebar = useSidebar();
   const { pathname } = useLocation();
-  const page = PAGES.find((candidate) => pathname === `/${candidate.path}`) ?? DEFAULT_PAGE;
+  const page = PAGES.find((candidate) => pathname === `/${candidate.path}` || pathname.startsWith(`/${candidate.path}/`)) ?? DEFAULT_PAGE;
 
   return (
     <div className={`portal-shell ${!sidebar.open ? 'sidebar-closed' : ''}`}>

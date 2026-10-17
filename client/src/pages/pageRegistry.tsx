@@ -1,9 +1,10 @@
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import InsightsIcon from '@mui/icons-material/Insights';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { lazy, type ComponentType, type LazyExoticComponent, type ReactNode } from 'react';
 
 export interface PageDefinition {
-  /** URL segment; also the route key. */
+  /** URL segment; also the route key. A page may handle its own sub-routes below it. */
   path: string;
   title: string;
   subtitle: string;
@@ -29,6 +30,13 @@ export const PAGES: readonly PageDefinition[] = [
     subtitle: 'Projection des heures et congés sur les dix prochaines années.',
     icon: <InsightsIcon />,
     component: lazy(() => import('./ForecastRoute')),
+  },
+  {
+    path: 'parameters',
+    title: 'Paramètres',
+    subtitle: 'Configuration des profils horaires et des congés.',
+    icon: <SettingsIcon />,
+    component: lazy(() => import('./ParametersRoute')),
   },
 ];
 

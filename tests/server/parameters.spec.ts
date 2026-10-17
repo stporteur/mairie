@@ -25,6 +25,14 @@ const atsemRows: ParameterAtsem[] = [
 ];
 const standardRows: ParameterStandard[] = [{ id: 1, parameter: parameters[1], weekHours: 37.5 }];
 
+const unusedRepository: ParametersRepository = {
+  findAll: async () => [],
+  findById: async () => null,
+  create: async () => { throw new Error('unused'); },
+  update: async () => null,
+  delete: async () => false,
+};
+
 function fakeResponse() {
   return {
     statusCode: 200,
@@ -41,6 +49,7 @@ describe('buildParameterProfiles', () => {
     expect(profiles[0]).toEqual({
       id: 1,
       name: 'ATSEM 37h30',
+      planningTypeId: 2,
       planningType: 'ATSEM',
       holidays: 25,
       rtt: 15,
@@ -63,7 +72,7 @@ describe('buildParameterProfiles', () => {
 describe('createGetParameters', () => {
   it('returns the profiles from the repository', async () => {
     const profiles: ParameterProfile[] = buildParameterProfiles(parameters, atsemRows, standardRows);
-    const repository: ParametersRepository = { findAll: async () => profiles };
+    const repository: ParametersRepository = { ...unusedRepository, findAll: async () => profiles };
     const res = fakeResponse();
 
     await createGetParameters(repository)({} as Request, res as unknown as Response);
@@ -73,7 +82,7 @@ describe('createGetParameters', () => {
   });
 
   it('answers 500 when the repository fails', async () => {
-    const repository: ParametersRepository = { findAll: async () => { throw new Error('db down'); } };
+    const repository: ParametersRepository = { ...unusedRepository, findAll: async () => { throw new Error('db down'); } };
     const res = fakeResponse();
 
     await createGetParameters(repository)({} as Request, res as unknown as Response);

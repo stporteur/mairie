@@ -17,6 +17,7 @@ export function buildParameterProfiles(
     return {
       id: parameter.id,
       name: parameter.name,
+      planningTypeId: parameter.planningType?.id ?? null,
       planningType: toPlanningTypeCode(parameter.planningType?.code),
       holidays: parameter.holidays ?? null,
       rtt: parameter.rtt ?? null,

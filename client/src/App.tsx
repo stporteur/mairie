@@ -11,7 +11,7 @@ function App() {
           <Route element={<AppLayout />}>
             <Route index element={<Navigate to={`/${DEFAULT_PAGE.path}`} replace />} />
             {PAGES.map(({ path, component: Page }) => (
-              <Route key={path} path={path} element={<Page />} />
+              <Route key={path} path={`${path}/*`} element={<Page />} />
             ))}
             <Route path="*" element={<Navigate to={`/${DEFAULT_PAGE.path}`} replace />} />
           </Route>

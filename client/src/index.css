@@ -406,6 +406,197 @@ button {
   border-radius: 16px;
 }
 
+.month-input select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #f9fafb;
+}
+
+.month-input input:disabled,
+.month-input select:disabled {
+  color: #111827;
+  background: #f3f4f6;
+  cursor: default;
+}
+
+.parameters-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.parameters-toolbar h2 {
+  margin: 0;
+}
+
+.parameters-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.parameters-toolbar .primary-button,
+.parameters-toolbar .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.secondary-button {
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  font-weight: 700;
+  background: white;
+  color: #374151;
+}
+
+.parameters-toolbar button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 700;
+  background: #dc2626;
+  color: white;
+  cursor: pointer;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.danger-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.weekdays-combobox {
+  position: relative;
+}
+
+.weekdays-combobox summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #f9fafb;
+  cursor: pointer;
+  list-style: none;
+}
+
+.weekdays-combobox summary::-webkit-details-marker {
+  display: none;
+}
+
+.weekdays-combobox summary::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-left: 8px;
+  border-right: 2px solid #6b7280;
+  border-bottom: 2px solid #6b7280;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.weekdays-combobox[open] summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.weekdays-combobox.is-disabled summary {
+  color: #111827;
+  background: #f3f4f6;
+  cursor: default;
+}
+
+.weekdays-combobox.is-disabled summary::after {
+  display: none;
+}
+
+.weekdays-options {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.weekdays-options label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-weight: 400;
+  line-height: 1;
+  text-align: left;
+  cursor: pointer;
+}
+
+.weekdays-options label:hover {
+  background: #f3f4f6;
+}
+
+.month-input .weekdays-options input[type="checkbox"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+}
+
+.parameters-section {
+  margin: 20px 0 0;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+}
+
+.parameters-section legend {
+  padding: 0 8px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background: #f3f4f6;
+}
+
+.clickable-row a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .warnings {
   margin-bottom: 24px;
 }
