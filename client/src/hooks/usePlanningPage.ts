@@ -6,7 +6,8 @@ import { DEFAULT_YEAR } from '@/config/constants';
 import { getAnnualWarnings, summarizeYear } from '@/domain/summary/annualSummary';
 import { groupByMonth, summarizeMonths } from '@/domain/summary/monthlySummary';
 import { toLeaveParameters } from '@/domain/settings/normalize';
-import type { LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import { getSchoolWorkdaysPerWeek } from '@/domain/settings/leaveProfiles';
+import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 import { createCalculatePlanning } from '@/handlers/planning/calculatePlanning';
 import { createChangePlanningSetting } from '@/handlers/planning/changePlanningSetting';
 import { createChangeYear } from '@/handlers/planning/changeYear';
@@ -18,9 +19,9 @@ import { useServices } from './useServices';
 
 const NO_TRAINING_HOURS: number[] = Array.from({ length: 12 }, () => 0);
 
-export function usePlanningPage() {
+export function usePlanningPage(profiles: LeaveProfiles) {
   const services = useServices();
-  const [initial] = useState(() => loadLeaveState(services.preferences));
+  const [initial] = useState(() => loadLeaveState(services.preferences, profiles));
   const [year, setYear] = useState<number>(DEFAULT_YEAR);
   const [vacations, setVacations] = useState<VacationPeriod[]>([]);
   const [vacationSource, setVacationSource] = useState<VacationSource | null>(null);
@@ -31,12 +32,13 @@ export function usePlanningPage() {
   const [exportError, setExportError] = useState('');
 
   const form = useLeaveSettingsForm({
+    profiles,
     initialSettings: initial.draftSettings,
     initialProfile: initial.selectedProfile,
     clearError: () => setCalculationError(''),
   });
 
-  const parameters = toLeaveParameters(appliedSettings, appliedProfile);
+  const parameters = toLeaveParameters(appliedSettings, getSchoolWorkdaysPerWeek(profiles, appliedProfile));
   const { cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, schoolWorkdaysPerWeek } = parameters;
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export function usePlanningPage() {
     vacationSource,
     settings: form.settings,
     profile: form.profile,
+    profiles,
     calculationError,
     exporting,
     exportError,
@@ -96,6 +99,7 @@ export function usePlanningPage() {
     }),
     onExport: createExportPlanning({
       year,
+      profiles,
       profile: form.profile,
       calendar,
       exporting,

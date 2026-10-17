@@ -10,11 +10,16 @@
     "dev:server": "node --watch-path=server --watch-path=shared --require ts-node/register server/index.ts",
     "build": "npm run build --prefix client",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:status": "liquibase --defaults-file=db/liquibase.properties --search-path=db status",
+    "db:update": "liquibase --defaults-file=db/liquibase.properties --search-path=db update",
+    "db:check": "ts-node --project server/tsconfig.json server/checkDatabase.ts",
     "test:legacy": "ts-node --project server/tsconfig.json server/vacations.test.ts && ts-node --project server/tsconfig.json server/export.test.ts && ts-node --project server/tsconfig.json server/forecastExport.test.ts",
     "test:jest": "jest",
     "test": "npm run test:legacy && npm run test:jest"
   },
   "dependencies": {
+    "@mikro-orm/core": "^7.2.5",
+    "@mikro-orm/postgresql": "^7.2.5",
     "exceljs": "^4.4.0",
     "express": "^4.18.4"
   },

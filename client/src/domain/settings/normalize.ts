@@ -1,5 +1,5 @@
 import { DEFAULT_LEAVE_SETTINGS } from './leaveProfiles';
-import type { LeaveParameters, LeaveSettingKey, LeaveSettings, SelectedLeaveProfile } from './types';
+import type { LeaveParameters, LeaveSettingKey, LeaveSettings } from './types';
 
 const QUARTER_HOUR_TOLERANCE = 1e-8;
 const MAX_SCHOOL_WEEKLY_HOURS = 39;
@@ -49,13 +49,13 @@ export function normalizeSettingValue(setting: LeaveSettingKey, value: string): 
     : normalizeWeeklyHours(value, fallback));
 }
 
-export function toLeaveParameters(settings: LeaveSettings, profile: SelectedLeaveProfile): LeaveParameters {
+export function toLeaveParameters(settings: LeaveSettings, schoolWorkdaysPerWeek: number): LeaveParameters {
   return {
     cpQuota: normalizeQuota(settings.cpDays, defaultOf('cpDays')),
     rttQuota: normalizeQuota(settings.rttDays, defaultOf('rttDays')),
     schoolWeeklyHours: normalizeWeeklyHours(settings.schoolWeeklyHours, defaultOf('schoolWeeklyHours')),
     vacationWeeklyHours: normalizeWeeklyHours(settings.vacationWeeklyHours, defaultOf('vacationWeeklyHours')),
-    schoolWorkdaysPerWeek: profile === 'mairie375' ? 5 : 4,
+    schoolWorkdaysPerWeek,
   };
 }
 

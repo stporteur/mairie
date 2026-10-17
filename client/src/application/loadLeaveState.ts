@@ -6,7 +6,7 @@ import {
   isSelectedLeaveProfile,
 } from '@/domain/settings/leaveProfiles';
 import { normalizeLeaveSettings, normalizeSchoolWeeklyHours } from '@/domain/settings/normalize';
-import type { LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 
 export interface LeaveState {
   selectedProfile: SelectedLeaveProfile;
@@ -34,19 +34,19 @@ function readAppliedSettings(store: LeavePreferencesStore): LeaveSettings {
   };
 }
 
-function profileOrMatching(saved: string | null, settings: LeaveSettings): SelectedLeaveProfile {
-  return isSelectedLeaveProfile(saved) ? saved : findMatchingProfile(settings);
+function profileOrMatching(profiles: LeaveProfiles, saved: string | null, settings: LeaveSettings): SelectedLeaveProfile {
+  return isSelectedLeaveProfile(profiles, saved) ? saved : findMatchingProfile(profiles, settings);
 }
 
-/** Restores the leave state saved by the user, falling back to the default profile. */
-export function loadLeaveState(store: LeavePreferencesStore): LeaveState {
+/** Restores the leave state saved by the user, falling back to the profile matching the saved values. */
+export function loadLeaveState(store: LeavePreferencesStore, profiles: LeaveProfiles): LeaveState {
   const appliedSettings = readAppliedSettings(store);
-  const selectedProfile = profileOrMatching(store.readProfile(), appliedSettings);
+  const selectedProfile = profileOrMatching(profiles, store.readProfile(), appliedSettings);
 
   return {
     selectedProfile,
-    draftSettings: applyProfileToSettings(appliedSettings, selectedProfile),
+    draftSettings: applyProfileToSettings(profiles, appliedSettings, selectedProfile),
     appliedSettings,
-    appliedProfile: profileOrMatching(store.readAppliedProfile(), appliedSettings),
+    appliedProfile: profileOrMatching(profiles, store.readAppliedProfile(), appliedSettings),
   };
 }

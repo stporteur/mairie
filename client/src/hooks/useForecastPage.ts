@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ForecastSummaryRow } from '@shared/types/forecast';
-import type { LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 import { createCalculateForecast } from '@/handlers/forecast/calculateForecast';
 import { createExportForecast } from '@/handlers/forecast/exportForecast';
 import { useLeaveSettingsForm } from './useLeaveSettingsForm';
@@ -8,11 +8,12 @@ import { useServices } from './useServices';
 
 interface ForecastPageOptions {
   startYear: number;
+  profiles: LeaveProfiles;
   initialSettings: LeaveSettings;
   initialProfile: SelectedLeaveProfile;
 }
 
-export function useForecastPage({ startYear, initialSettings, initialProfile }: ForecastPageOptions) {
+export function useForecastPage({ startYear, profiles, initialSettings, initialProfile }: ForecastPageOptions) {
   const services = useServices();
   const [rows, setRows] = useState<ForecastSummaryRow[]>([]);
   const [calculating, setCalculating] = useState(false);
@@ -21,6 +22,7 @@ export function useForecastPage({ startYear, initialSettings, initialProfile }: 
   const [exporting, setExporting] = useState(false);
 
   const form = useLeaveSettingsForm({
+    profiles,
     initialSettings,
     initialProfile,
     clearError: () => setError(''),
@@ -35,11 +37,13 @@ export function useForecastPage({ startYear, initialSettings, initialProfile }: 
     exporting,
     settings: form.settings,
     profile: form.profile,
+    profiles,
     onSettingChange: form.changeSetting,
     onProfileChange: form.changeProfile,
     onCalculate: createCalculateForecast({
       startYear,
       settings: form.settings,
+      profiles,
       profile: form.profile,
       setSettings: form.setSettings,
       setRows,
@@ -50,6 +54,7 @@ export function useForecastPage({ startYear, initialSettings, initialProfile }: 
     }),
     onExport: createExportForecast({
       startYear,
+      profiles,
       profile: form.profile,
       rows,
       exporting,

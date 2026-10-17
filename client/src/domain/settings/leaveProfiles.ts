@@ -1,4 +1,5 @@
-import type { LeaveProfileKey, LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from './types';
+import type { LeaveProfile, LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from './types';
+import { CUSTOM_PROFILE } from './types';
 
 export const DEFAULT_LEAVE_SETTINGS: LeaveSettings = {
   cpDays: '25',
@@ -7,38 +8,43 @@ export const DEFAULT_LEAVE_SETTINGS: LeaveSettings = {
   vacationWeeklyHours: '35',
 };
 
-export const LEAVE_PROFILES: LeaveProfiles = {
-  atsem365: { label: '36h30 ATSEM', rttDays: '9', vacationWeeklyHours: '35', schoolWeeklyHours: '37' },
-  atsem375: { label: '37h30 ATSEM', rttDays: '15', vacationWeeklyHours: '37.5', schoolWeeklyHours: '37.5' },
-  mairie375: { label: '37h30 MAIRIE', rttDays: '15', vacationWeeklyHours: '37.5', schoolWeeklyHours: '37.5' },
-};
+/** School week length used when no catalog profile is selected. */
+export const DEFAULT_SCHOOL_WORKDAYS_PER_WEEK = 4;
 
-export const PROFILE_KEYS = Object.keys(LEAVE_PROFILES) as LeaveProfileKey[];
-export const PROFILE_NAMES: SelectedLeaveProfile[] = [...PROFILE_KEYS, 'custom'];
-export const DEFAULT_LEAVE_PROFILE: SelectedLeaveProfile = 'atsem365';
-
-export function isSelectedLeaveProfile(value: unknown): value is SelectedLeaveProfile {
-  return PROFILE_NAMES.includes(value as SelectedLeaveProfile);
+export function findProfile(profiles: LeaveProfiles, key: SelectedLeaveProfile): LeaveProfile | undefined {
+  return profiles.find((profile) => profile.key === key);
 }
 
-export function getProfileLabel(profile: SelectedLeaveProfile): string {
-  return profile === 'custom' ? 'Custom' : LEAVE_PROFILES[profile].label;
+export function isSelectedLeaveProfile(profiles: LeaveProfiles, value: unknown): value is SelectedLeaveProfile {
+  return value === CUSTOM_PROFILE || profiles.some((profile) => profile.key === value);
 }
 
-export function findMatchingProfile(settings: LeaveSettings): SelectedLeaveProfile {
-  return PROFILE_KEYS.find((key) => {
-    const profile = LEAVE_PROFILES[key];
-    return profile.rttDays === settings.rttDays &&
-      profile.vacationWeeklyHours === settings.vacationWeeklyHours &&
-      profile.schoolWeeklyHours === settings.schoolWeeklyHours;
-  }) || 'custom';
+export function getProfileLabel(profiles: LeaveProfiles, profile: SelectedLeaveProfile): string {
+  return findProfile(profiles, profile)?.label ?? 'Custom';
+}
+
+export function getSchoolWorkdaysPerWeek(profiles: LeaveProfiles, profile: SelectedLeaveProfile): number {
+  return findProfile(profiles, profile)?.schoolWorkdaysPerWeek ?? DEFAULT_SCHOOL_WORKDAYS_PER_WEEK;
+}
+
+export function findMatchingProfile(profiles: LeaveProfiles, settings: LeaveSettings): SelectedLeaveProfile {
+  return profiles.find((profile) =>
+    profile.rttDays === settings.rttDays &&
+    profile.vacationWeeklyHours === settings.vacationWeeklyHours &&
+    profile.schoolWeeklyHours === settings.schoolWeeklyHours,
+  )?.key ?? CUSTOM_PROFILE;
 }
 
 /** Returns the settings with the profile's values applied; a custom profile clears them. */
-export function applyProfileToSettings(settings: LeaveSettings, profile: SelectedLeaveProfile): LeaveSettings {
-  if (profile === 'custom') {
+export function applyProfileToSettings(
+  profiles: LeaveProfiles,
+  settings: LeaveSettings,
+  profile: SelectedLeaveProfile,
+): LeaveSettings {
+  const selected = findProfile(profiles, profile);
+  if (!selected) {
     return { ...settings, rttDays: '', vacationWeeklyHours: '', schoolWeeklyHours: '' };
   }
-  const { rttDays, vacationWeeklyHours, schoolWeeklyHours } = LEAVE_PROFILES[profile];
+  const { rttDays, vacationWeeklyHours, schoolWeeklyHours } = selected;
   return { ...settings, rttDays, vacationWeeklyHours, schoolWeeklyHours };
 }

@@ -1,5 +1,7 @@
-export type LeaveProfileKey = 'atsem365' | 'atsem375' | 'mairie375';
-export type SelectedLeaveProfile = LeaveProfileKey | 'custom';
+export const CUSTOM_PROFILE = 'custom';
+
+/** Key of a profile coming from the catalog, or `CUSTOM_PROFILE` for free values. */
+export type SelectedLeaveProfile = string;
 
 /** Form values, kept as strings so that fields can be empty while typing. */
 export interface LeaveSettings {
@@ -12,13 +14,15 @@ export interface LeaveSettings {
 export type LeaveSettingKey = keyof LeaveSettings;
 
 export interface LeaveProfile {
+  key: string;
   label: string;
   rttDays: string;
   vacationWeeklyHours: string;
   schoolWeeklyHours: string;
+  schoolWorkdaysPerWeek: number;
 }
 
-export type LeaveProfiles = Record<LeaveProfileKey, LeaveProfile>;
+export type LeaveProfiles = readonly LeaveProfile[];
 
 /** Validated numeric values used by the calculations. */
 export interface LeaveParameters {

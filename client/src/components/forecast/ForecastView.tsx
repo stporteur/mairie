@@ -18,6 +18,7 @@ function ForecastView({ model }: { model: ForecastPageModel }) {
             name="forecast-leave-profile"
             ariaLabel="Profils horaires prévisionnel"
             selected={model.profile}
+            profiles={model.profiles}
             onChange={model.onProfileChange}
           />
           <LeaveSettingsFields settings={model.settings} onChange={model.onSettingChange} />

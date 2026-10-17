@@ -7,6 +7,7 @@ function ForecastRoute() {
     <ForecastPage
       key={`${planning.year}-${planning.profile}`}
       startYear={planning.year}
+      profiles={planning.profiles}
       initialSettings={planning.settings}
       initialProfile={planning.profile}
     />

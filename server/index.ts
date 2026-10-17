@@ -1,14 +1,36 @@
 import path from 'path';
 import { createApp } from './app';
+import { loadEnvFile } from './infrastructure/loadEnvFile';
 import { createDataGouvOfficialVacationsSource } from './infrastructure/officialVacations/officialVacationsSources';
+import { createOrm } from './infrastructure/persistence/createOrm';
+import { MikroOrmParametersRepository } from './infrastructure/persistence/MikroOrmParametersRepository';
 
 const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 
-const app = createApp({
-  clientDist: path.resolve(__dirname, '../client/dist'),
-  officialVacations: createDataGouvOfficialVacationsSource(),
-});
+async function main(): Promise<void> {
+  loadEnvFile();
+  const orm = await createOrm();
 
-app.listen(port, () => {
-  console.log(`Portail applicatif démarré sur http://localhost:${port}`);
+  const app = createApp({
+    clientDist: path.resolve(__dirname, '../client/dist'),
+    officialVacations: createDataGouvOfficialVacationsSource(),
+    parameters: new MikroOrmParametersRepository(orm),
+  });
+
+  const server = app.listen(port, () => {
+    console.log(`Portail applicatif démarré sur http://localhost:${port}`);
+  });
+
+  const shutdown = (): void => {
+    server.close(() => {
+      void orm.close().finally(() => process.exit(0));
+    });
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
 });

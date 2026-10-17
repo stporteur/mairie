@@ -14,6 +14,7 @@ function PlanningPage({ model }: { model: PlanningPageModel }) {
         <LeaveSettingsCard
           settings={model.settings}
           profile={model.profile}
+          profiles={model.profiles}
           error={model.calculationError}
           onProfileChange={model.onProfileChange}
           onSettingChange={model.onSettingChange}

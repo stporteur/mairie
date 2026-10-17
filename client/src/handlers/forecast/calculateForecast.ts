@@ -1,14 +1,16 @@
 import { computeForecast } from '@/application/computeForecast';
 import type { AppServices } from '@/application/AppServices';
+import { getSchoolWorkdaysPerWeek } from '@/domain/settings/leaveProfiles';
 import { normalizeLeaveSettings, toLeaveParameters } from '@/domain/settings/normalize';
 import { validateForecastSettings } from '@/domain/settings/validate';
-import type { LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 import type { ForecastSummaryRow } from '@shared/types/forecast';
 import type { StateSetter } from '../types';
 
 export interface CalculateForecastDeps {
   startYear: number;
   settings: LeaveSettings;
+  profiles: LeaveProfiles;
   profile: SelectedLeaveProfile;
   setSettings: StateSetter<LeaveSettings>;
   setRows: StateSetter<ForecastSummaryRow[]>;
@@ -32,7 +34,7 @@ export function createCalculateForecast(deps: CalculateForecastDeps) {
     try {
       const rows = await computeForecast({
         startYear: deps.startYear,
-        parameters: toLeaveParameters(deps.settings, deps.profile),
+        parameters: toLeaveParameters(deps.settings, getSchoolWorkdaysPerWeek(deps.profiles, deps.profile)),
         onProgress: (year, index, total) => deps.setProgress(`Calcul de ${year} (${index}/${total})…`),
       }, deps.services);
 

@@ -3,11 +3,12 @@ import type { AppServices } from '@/application/AppServices';
 import type { TrainingCalendarDay } from '@/domain/calendar/types';
 import { planningFilename } from '@/domain/export/filenames';
 import { getProfileLabel } from '@/domain/settings/leaveProfiles';
-import type { SelectedLeaveProfile } from '@/domain/settings/types';
+import type { LeaveProfiles, SelectedLeaveProfile } from '@/domain/settings/types';
 import type { StateSetter } from '../types';
 
 export interface ExportPlanningDeps {
   year: number;
+  profiles: LeaveProfiles;
   profile: SelectedLeaveProfile;
   calendar: TrainingCalendarDay[];
   exporting: boolean;
@@ -22,7 +23,7 @@ export function createExportPlanning(deps: ExportPlanningDeps) {
     deps.setExporting(true);
     deps.setError('');
     try {
-      const label = getProfileLabel(deps.profile);
+      const label = getProfileLabel(deps.profiles, deps.profile);
       const file = await deps.services.exports.exportCalendar(
         buildCalendarExportRequest(deps.year, label, deps.calendar),
       );

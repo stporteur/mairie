@@ -13,6 +13,7 @@ import { createExportPlanning } from '@/handlers/planning/exportPlanning';
 import { createLoadVacations } from '@/handlers/vacations/loadVacations';
 import type { StateSetter } from '@/handlers/types';
 import type { LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import { PROFILES } from '../fixtures/leaveProfiles';
 
 const settings: LeaveSettings = { cpDays: '25', rttDays: '9', schoolWeeklyHours: '37', vacationWeeklyHours: '35' };
 
@@ -53,7 +54,7 @@ describe('leave settings handlers', () => {
     const form = createState(settings);
     const profile = createState<SelectedLeaveProfile>('atsem365');
     const clearError = jest.fn();
-    createChangeLeaveProfile({ setSettings: form.set, setProfile: profile.set, clearError })('atsem375');
+    createChangeLeaveProfile({ profiles: PROFILES, setSettings: form.set, setProfile: profile.set, clearError })('atsem375');
 
     expect(profile.state.value).toBe('atsem375');
     expect(form.state.value.rttDays).toBe('15');
@@ -146,6 +147,7 @@ describe('planning handlers', () => {
 
     await createExportPlanning({
       year: 2026,
+      profiles: PROFILES,
       profile: 'atsem365',
       calendar: [{ date: '2026-01-01' } as never],
       exporting: false,
@@ -163,6 +165,7 @@ describe('planning handlers', () => {
     const error = createState('');
     await createExportPlanning({
       year: 2026,
+      profiles: PROFILES,
       profile: 'custom',
       calendar: [{ date: '2026-01-01' } as never],
       exporting: false,
@@ -180,6 +183,7 @@ describe('planning handlers', () => {
     const exportCalendar = jest.fn();
     const deps = {
       year: 2026,
+      profiles: PROFILES,
       profile: 'custom' as const,
       setExporting: jest.fn(),
       setError: jest.fn(),
@@ -233,6 +237,7 @@ describe('forecast handlers', () => {
     await createCalculateForecast({
       startYear: 2026,
       settings: { ...settings, rttDays: '' },
+      profiles: PROFILES,
       profile: 'custom',
       setSettings: jest.fn(),
       setRows: jest.fn(),
@@ -252,6 +257,7 @@ describe('forecast handlers', () => {
     await createCalculateForecast({
       startYear: 2026,
       settings,
+      profiles: PROFILES,
       profile: 'atsem365',
       setSettings: jest.fn(),
       setRows: rows.set,
@@ -278,6 +284,7 @@ describe('forecast handlers', () => {
     const download = jest.fn();
     const base = {
       startYear: 2026,
+      profiles: PROFILES,
       profile: 'mairie375' as const,
       exporting: false,
       setExporting: jest.fn(),

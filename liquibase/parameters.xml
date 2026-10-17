@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+  <changeSet id="parameters-001-planning-types" author="mairie">
+    <createTable tableName="planning_types">
+      <column name="id" type="integer" autoIncrement="true">
+        <constraints primaryKey="true" primaryKeyName="pk_planning_types" nullable="false"/>
+      </column>
+      <column name="code" type="varchar(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="varchar(128)">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="parameters-002-parameters" author="mairie">
+    <createTable tableName="parameters">
+      <column name="id" type="integer" autoIncrement="true">
+        <constraints primaryKey="true" primaryKeyName="pk_parameters" nullable="false"/>
+      </column>
+      <column name="name" type="varchar(128)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="holidays" type="integer"/>
+      <column name="rtt" type="integer"/>
+      <column name="planning_type_id" type="integer"/>
+    </createTable>
+    <addForeignKeyConstraint
+        constraintName="fk_parameters_planning_type"
+        baseTableName="parameters"
+        baseColumnNames="planning_type_id"
+        referencedTableName="planning_types"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+  </changeSet>
+
+  <changeSet id="parameters-003-parameters-atsem" author="mairie">
+    <createTable tableName="parameters_atsem">
+      <column name="id" type="integer" autoIncrement="true">
+        <constraints primaryKey="true" primaryKeyName="pk_parameters_atsem" nullable="false"/>
+      </column>
+      <column name="parameter_id" type="integer"/>
+      <column name="holiday_period_offdays" type="varchar(64)"/>
+      <column name="holiday_period_hours" type="decimal(8,2)"/>
+      <column name="school_period_offdays" type="varchar(64)"/>
+      <column name="school_period_hours" type="decimal(8,2)"/>
+    </createTable>
+    <addForeignKeyConstraint
+        constraintName="fk_parameters_atsem_parameter"
+        baseTableName="parameters_atsem"
+        baseColumnNames="parameter_id"
+        referencedTableName="parameters"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+  </changeSet>
+
+  <changeSet id="parameters-004-parameters-standard" author="mairie">
+    <createTable tableName="parameters_standard">
+      <column name="id" type="integer" autoIncrement="true">
+        <constraints primaryKey="true" primaryKeyName="pk_parameters_standard" nullable="false"/>
+      </column>
+      <column name="parameter_id" type="integer"/>
+      <column name="week_hours" type="decimal(8,2)"/>
+    </createTable>
+    <addForeignKeyConstraint
+        constraintName="fk_parameters_standard_parameter"
+        baseTableName="parameters_standard"
+        baseColumnNames="parameter_id"
+        referencedTableName="parameters"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+  </changeSet>
+
+  <changeSet id="parameters-005-planning-types-data" author="mairie">
+    <insert tableName="planning_types">
+      <column name="code" value="STANDARD"/>
+      <column name="name" value="Standard"/>
+    </insert>
+    <insert tableName="planning_types">
+      <column name="code" value="ATSEM"/>
+      <column name="name" value="ATSEM"/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="parameters-006-parameters-data" author="mairie">
+    <insert tableName="parameters">
+      <column name="name" value="ATSEM 37h30"/>
+      <column name="holidays" valueNumeric="25"/>
+      <column name="rtt" valueNumeric="15"/>
+      <column name="planning_type_id" valueNumeric="2"/>
+    </insert>
+    <insert tableName="parameters">
+      <column name="name" value="ATSEM 36h30"/>
+      <column name="holidays" valueNumeric="25"/>
+      <column name="rtt" valueNumeric="9"/>
+      <column name="planning_type_id" valueNumeric="2"/>
+    </insert>
+    <insert tableName="parameters">
+      <column name="name" value="MAIRIE 37h30"/>
+      <column name="holidays" valueNumeric="25"/>
+      <column name="rtt" valueNumeric="15"/>
+      <column name="planning_type_id" valueNumeric="1"/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="parameters-007-parameters-atsem-data" author="mairie">
+    <insert tableName="parameters_atsem">
+      <column name="parameter_id" valueNumeric="1"/>
+      <column name="holiday_period_hours" valueNumeric="37.5"/>
+      <column name="school_period_offdays" value="mercredi"/>
+      <column name="school_period_hours" valueNumeric="37.5"/>
+    </insert>
+    <insert tableName="parameters_atsem">
+      <column name="parameter_id" valueNumeric="2"/>
+      <column name="holiday_period_hours" valueNumeric="35"/>
+      <column name="school_period_offdays" value="mercredi"/>
+      <column name="school_period_hours" valueNumeric="37"/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="parameters-008-parameters-standard-data" author="mairie">
+    <insert tableName="parameters_standard">
+      <column name="parameter_id" valueNumeric="3"/>
+      <column name="week_hours" valueNumeric="37.5"/>
+    </insert>
+  </changeSet>
+
+</databaseChangeLog>

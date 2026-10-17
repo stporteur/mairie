@@ -1,6 +1,6 @@
 import { loadLeaveState } from '@/application/loadLeaveState';
 import { forecastFilename, planningFilename } from '@/domain/export/filenames';
-import { applyProfileToSettings, findMatchingProfile, getProfileLabel } from '@/domain/settings/leaveProfiles';
+import { applyProfileToSettings, findMatchingProfile, getProfileLabel, getSchoolWorkdaysPerWeek } from '@/domain/settings/leaveProfiles';
 import {
   normalizeLeaveSettings,
   normalizeQuota,
@@ -13,6 +13,7 @@ import type { LeaveSettings } from '@/domain/settings/types';
 import { adjustVacationDates } from '@/domain/vacations/adjustVacationDates';
 import { prepareVacations } from '@/domain/vacations/prepareVacations';
 import type { LeavePreferencesStore } from '@/ports/LeavePreferencesStore';
+import { PROFILES } from '../fixtures/leaveProfiles';
 
 const atsem365: LeaveSettings = { cpDays: '25', rttDays: '9', schoolWeeklyHours: '37', vacationWeeklyHours: '35' };
 
@@ -43,8 +44,9 @@ describe('normalization', () => {
   });
 
   it('derives calculation parameters and the weekly workdays from the profile', () => {
-    expect(toLeaveParameters(atsem365, 'mairie375').schoolWorkdaysPerWeek).toBe(5);
-    expect(toLeaveParameters(atsem365, 'atsem365')).toMatchObject({ cpQuota: 25, rttQuota: 9, schoolWorkdaysPerWeek: 4 });
+    expect(getSchoolWorkdaysPerWeek(PROFILES, 'mairie375')).toBe(5);
+    expect(getSchoolWorkdaysPerWeek(PROFILES, 'custom')).toBe(4);
+    expect(toLeaveParameters(atsem365, 4)).toMatchObject({ cpQuota: 25, rttQuota: 9, schoolWorkdaysPerWeek: 4 });
   });
 });
 
@@ -65,24 +67,24 @@ describe('validation', () => {
 
 describe('profiles', () => {
   it('finds the profile matching the settings, or custom', () => {
-    expect(findMatchingProfile(atsem365)).toBe('atsem365');
-    expect(findMatchingProfile({ ...atsem365, rttDays: '3' })).toBe('custom');
+    expect(findMatchingProfile(PROFILES, atsem365)).toBe('atsem365');
+    expect(findMatchingProfile(PROFILES, { ...atsem365, rttDays: '3' })).toBe('custom');
   });
 
   it('applies a profile and clears the fields for custom', () => {
-    expect(applyProfileToSettings(atsem365, 'atsem375')).toEqual({ cpDays: '25', rttDays: '15', schoolWeeklyHours: '37.5', vacationWeeklyHours: '37.5' });
-    expect(applyProfileToSettings(atsem365, 'custom')).toEqual({ cpDays: '25', rttDays: '', schoolWeeklyHours: '', vacationWeeklyHours: '' });
+    expect(applyProfileToSettings(PROFILES, atsem365, 'atsem375')).toEqual({ cpDays: '25', rttDays: '15', schoolWeeklyHours: '37.5', vacationWeeklyHours: '37.5' });
+    expect(applyProfileToSettings(PROFILES, atsem365, 'custom')).toEqual({ cpDays: '25', rttDays: '', schoolWeeklyHours: '', vacationWeeklyHours: '' });
   });
 
   it('labels profiles', () => {
-    expect(getProfileLabel('custom')).toBe('Custom');
-    expect(getProfileLabel('mairie375')).toBe('37h30 MAIRIE');
+    expect(getProfileLabel(PROFILES, 'custom')).toBe('Custom');
+    expect(getProfileLabel(PROFILES, 'mairie375')).toBe('37h30 MAIRIE');
   });
 });
 
 describe('loadLeaveState', () => {
-  it('defaults to the ATSEM 36h30 profile', () => {
-    expect(loadLeaveState(fakeStore())).toEqual({
+  it('defaults to the profile matching the default settings', () => {
+    expect(loadLeaveState(fakeStore(), PROFILES)).toEqual({
       selectedProfile: 'atsem365',
       draftSettings: atsem365,
       appliedSettings: atsem365,
@@ -95,7 +97,7 @@ describe('loadLeaveState', () => {
       settings: { cpDays: 20, rttDays: 15, schoolWeeklyHours: 37.5, vacationWeeklyHours: 37.5 },
       profile: 'custom',
       applied: 'mairie375',
-    }));
+    }), PROFILES);
     expect(state.appliedSettings.cpDays).toBe('20');
     expect(state.selectedProfile).toBe('custom');
     expect(state.draftSettings).toMatchObject({ cpDays: '20', rttDays: '' });
@@ -103,8 +105,14 @@ describe('loadLeaveState', () => {
   });
 
   it('reverts invalid saved school hours to the default', () => {
-    const state = loadLeaveState(fakeStore({ settings: { schoolWeeklyHours: 99 } }));
+    const state = loadLeaveState(fakeStore({ settings: { schoolWeeklyHours: 99 } }), PROFILES);
     expect(state.appliedSettings.schoolWeeklyHours).toBe('37');
+  });
+
+  it('ignores a saved profile that is no longer in the catalog', () => {
+    const state = loadLeaveState(fakeStore({ profile: 'gone', applied: 'gone' }), PROFILES);
+    expect(state.selectedProfile).toBe('atsem365');
+    expect(state.appliedProfile).toBe('atsem365');
   });
 });
 

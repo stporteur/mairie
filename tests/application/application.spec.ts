@@ -9,7 +9,7 @@ import type { LeaveSettings } from '@/domain/settings/types';
 
 const holidays = { getHolidays: () => new Set<string>() };
 const settings: LeaveSettings = { cpDays: '25', rttDays: '9', schoolWeeklyHours: '37', vacationWeeklyHours: '35' };
-const parameters = toLeaveParameters(settings, 'atsem365');
+const parameters = toLeaveParameters(settings, 4);
 
 function response(year: number): VacationsResponse {
   return {

@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: ../../liquibase/parameters.xml
+      relativeToChangelogFile: true
+  - includeAll:
+      path: migrations/
+      relativeToChangelogFile: true

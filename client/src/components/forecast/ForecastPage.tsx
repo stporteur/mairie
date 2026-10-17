@@ -1,9 +1,10 @@
-import type { LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 import { useForecastPage } from '@/hooks/useForecastPage';
 import ForecastView from './ForecastView';
 
 interface ForecastPageProps {
   startYear: number;
+  profiles: LeaveProfiles;
   initialSettings: LeaveSettings;
   initialProfile: SelectedLeaveProfile;
 }

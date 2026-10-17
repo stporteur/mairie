@@ -1,13 +1,14 @@
 import type { AppServices } from '@/application/AppServices';
 import { forecastFilename } from '@/domain/export/filenames';
 import { getProfileLabel } from '@/domain/settings/leaveProfiles';
-import type { SelectedLeaveProfile } from '@/domain/settings/types';
+import type { LeaveProfiles, SelectedLeaveProfile } from '@/domain/settings/types';
 import { FORECAST_YEAR_COUNT } from '@/config/constants';
 import type { ForecastSummaryRow } from '@shared/types/forecast';
 import type { StateSetter } from '../types';
 
 export interface ExportForecastDeps {
   startYear: number;
+  profiles: LeaveProfiles;
   profile: SelectedLeaveProfile;
   rows: ForecastSummaryRow[];
   exporting: boolean;
@@ -22,7 +23,7 @@ export function createExportForecast(deps: ExportForecastDeps) {
     deps.setExporting(true);
     deps.setError('');
     try {
-      const label = getProfileLabel(deps.profile);
+      const label = getProfileLabel(deps.profiles, deps.profile);
       const file = await deps.services.exports.exportForecast({
         startYear: deps.startYear,
         profile: label,
