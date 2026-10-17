@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import InsightsIcon from '@mui/icons-material/Insights';
 import { monthNames } from './utils/constants';
 import { allocateLeave } from './services/leave';
 import { allocateTraining } from './services/training';
@@ -168,7 +172,6 @@ function App() {
   const handleVacationsLoaded = useCallback((loadedVacations: VacationPeriod[]) => {
     setVacations(loadedVacations);
   }, []);
-  const handleLoadingChange = useCallback((_loading: boolean) => undefined, []);
   const handleYearChange = useCallback((newYear: number) => setYear(newYear), []);
 
   const calendarInfo = useMemo(() => {
@@ -320,13 +323,21 @@ function App() {
 
   return (
     <div className={`portal-shell ${!sidebarOpen ? 'sidebar-closed' : ''}`}>
-      <button className="sidebar-toggle" onClick={() => setSidebarOpen((open) => !open)} title="Basculer le menu">☰</button>
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="brand"><span>L'Haÿ-les-Roses</span></div>
         <nav>
-          <button className={`nav-item ${activePage === 'planning' ? 'active' : ''}`} type="button" onClick={() => setActivePage('planning')} aria-current={activePage === 'planning' ? 'page' : undefined}>Planning ATSEM</button>
-          <button className={`nav-item ${activePage === 'forecast' ? 'active' : ''}`} type="button" onClick={() => setActivePage('forecast')} aria-current={activePage === 'forecast' ? 'page' : undefined}>Prévisionnel</button>
+          <button className={`nav-item ${activePage === 'planning' ? 'active' : ''}`} type="button" onClick={() => setActivePage('planning')} aria-current={activePage === 'planning' ? 'page' : undefined} aria-label="Planning ATSEM" title="Planning ATSEM">
+            <CalendarMonthIcon />
+            <span className="nav-label">Planning ATSEM</span>
+          </button>
+          <button className={`nav-item ${activePage === 'forecast' ? 'active' : ''}`} type="button" onClick={() => setActivePage('forecast')} aria-current={activePage === 'forecast' ? 'page' : undefined} aria-label="Prévisionnel" title="Prévisionnel">
+            <InsightsIcon />
+            <span className="nav-label">Prévisionnel</span>
+          </button>
         </nav>
+        <button className="sidebar-toggle" type="button" onClick={() => setSidebarOpen((open) => !open)} title={sidebarOpen ? 'Replier le menu' : 'Déplier le menu'} aria-label={sidebarOpen ? 'Replier le menu' : 'Déplier le menu'} aria-expanded={sidebarOpen}>
+          {sidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        </button>
       </aside>
 
       <main className="main-content">
@@ -367,7 +378,7 @@ function App() {
                 {calculationError ? <div className="alert" role="alert">{calculationError}</div> : null}
                 <button className="primary-button calculate-button" type="button" onClick={handleCalculate}>Calculer</button>
               </div>
-              <VacationDisplay year={year} onVacationsLoaded={handleVacationsLoaded} onLoadingChange={handleLoadingChange} onYearChange={handleYearChange} />
+              <VacationDisplay year={year} onVacationsLoaded={handleVacationsLoaded} onYearChange={handleYearChange} />
             </section>
 
             <section className="stats-grid">

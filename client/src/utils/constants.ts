@@ -1,6 +1,4 @@
 // Constants for vacation keywords
-export { getDefaultVacationRanges } from '../../../shared/vacations';
-
 export const VACATION_KEYWORDS = {
   SMALL: ['noël', 'noel', 'hiver', 'printemps', 'toussaint'] as const,
   SUMMER: ['été', 'ete', 'grandes vacances', "vacances d'été", 'vacances ete'] as const,
