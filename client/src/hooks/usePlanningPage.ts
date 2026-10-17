@@ -1,0 +1,109 @@
+import { useEffect, useMemo, useState } from 'react';
+import type { VacationPeriod, VacationSource } from '@shared/types/vacations';
+import { computeYearPlan } from '@/application/computeYearPlan';
+import { loadLeaveState } from '@/application/loadLeaveState';
+import { DEFAULT_YEAR } from '@/config/constants';
+import { getAnnualWarnings, summarizeYear } from '@/domain/summary/annualSummary';
+import { groupByMonth, summarizeMonths } from '@/domain/summary/monthlySummary';
+import { toLeaveParameters } from '@/domain/settings/normalize';
+import type { LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
+import { createCalculatePlanning } from '@/handlers/planning/calculatePlanning';
+import { createChangePlanningSetting } from '@/handlers/planning/changePlanningSetting';
+import { createChangeYear } from '@/handlers/planning/changeYear';
+import { createEditVacationPeriod } from '@/handlers/planning/editVacationPeriod';
+import { createExportPlanning } from '@/handlers/planning/exportPlanning';
+import { createLoadVacations } from '@/handlers/vacations/loadVacations';
+import { useLeaveSettingsForm } from './useLeaveSettingsForm';
+import { useServices } from './useServices';
+
+const NO_TRAINING_HOURS: number[] = Array.from({ length: 12 }, () => 0);
+
+export function usePlanningPage() {
+  const services = useServices();
+  const [initial] = useState(() => loadLeaveState(services.preferences));
+  const [year, setYear] = useState<number>(DEFAULT_YEAR);
+  const [vacations, setVacations] = useState<VacationPeriod[]>([]);
+  const [vacationSource, setVacationSource] = useState<VacationSource | null>(null);
+  const [appliedSettings, setAppliedSettings] = useState<LeaveSettings>(initial.appliedSettings);
+  const [appliedProfile, setAppliedProfile] = useState<SelectedLeaveProfile>(initial.appliedProfile);
+  const [calculationError, setCalculationError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+
+  const form = useLeaveSettingsForm({
+    initialSettings: initial.draftSettings,
+    initialProfile: initial.selectedProfile,
+    clearError: () => setCalculationError(''),
+  });
+
+  const parameters = toLeaveParameters(appliedSettings, appliedProfile);
+  const { cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, schoolWorkdaysPerWeek } = parameters;
+
+  useEffect(() => {
+    services.preferences.writeSettings({ cpDays: cpQuota, rttDays: rttQuota, schoolWeeklyHours, vacationWeeklyHours });
+  }, [services, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours]);
+  useEffect(() => services.preferences.writeProfile(form.profile), [services, form.profile]);
+  useEffect(() => services.preferences.writeAppliedProfile(appliedProfile), [services, appliedProfile]);
+
+  useEffect(() => {
+    createLoadVacations({ gateway: services.vacations, setVacations, setSource: setVacationSource })(year);
+  }, [services, year]);
+
+  const calendar = useMemo(
+    () => computeYearPlan(
+      year,
+      vacations,
+      { cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, schoolWorkdaysPerWeek },
+      NO_TRAINING_HOURS,
+      services.holidays,
+    ) ?? [],
+    [services, year, vacations, cpQuota, rttQuota, schoolWeeklyHours, vacationWeeklyHours, schoolWorkdaysPerWeek],
+  );
+
+  const summary = summarizeYear(calendar, NO_TRAINING_HOURS);
+  const expectedLeave = cpQuota + rttQuota;
+
+  return {
+    year,
+    vacations,
+    vacationSource,
+    settings: form.settings,
+    profile: form.profile,
+    calculationError,
+    exporting,
+    exportError,
+    summary,
+    expectedLeave,
+    warnings: getAnnualWarnings(summary, expectedLeave),
+    monthlyCalendars: groupByMonth(calendar),
+    monthlySummaries: calendar.length ? summarizeMonths(calendar) : [],
+    canExport: calendar.length > 0 && !exporting,
+    onYearChange: createChangeYear({ setYear }),
+    onVacationChange: createEditVacationPeriod({ setVacations }),
+    onProfileChange: form.changeProfile,
+    onSettingChange: createChangePlanningSetting({
+      changeLeaveSetting: form.changeSetting,
+      clearError: () => setCalculationError(''),
+    }),
+    onSettingBlur: form.blurSetting,
+    onCalculate: createCalculatePlanning({
+      settings: form.settings,
+      profile: form.profile,
+      setSettings: form.setSettings,
+      setAppliedSettings,
+      setAppliedProfile,
+      setError: setCalculationError,
+    }),
+    onExport: createExportPlanning({
+      year,
+      profile: form.profile,
+      calendar,
+      exporting,
+      setExporting,
+      setError: setExportError,
+      services,
+    }),
+  };
+}
+
+export type PlanningPageModel = ReturnType<typeof usePlanningPage>;

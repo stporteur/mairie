@@ -9,10 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    "noEmit": true,
     "paths": {
-      "@/*": ["./client/src/*"]
+      "@/*": ["./client/src/*"],
+      "@shared/*": ["./shared/*"]
     }
   },
-  "include": ["client/src/**/*"],
+  "include": ["client/src/**/*", "shared/**/*"],
   "exclude": ["node_modules"]
 }

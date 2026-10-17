@@ -3,7 +3,7 @@ import { buildEstimatedVacationPeriods } from '../shared/vacations';
 import {
   isSupportedVacationYear,
   resolveVacationsForYear,
-} from './vacations';
+} from './domain/vacations';
 
 const estimate = resolveVacationsForYear(2028, null);
 assert.equal(estimate.source.estimated, true);

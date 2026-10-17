@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
-import { generateForecastWorkbook } from './forecastExport';
+import { generateForecastWorkbook } from './export/forecast/generateForecastWorkbook';
 
 async function run(): Promise<void> {
   const rows = Array.from({ length: 10 }, (_, index) => ({

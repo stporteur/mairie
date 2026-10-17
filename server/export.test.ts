@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
-import { generateCalendarWorkbook } from './export';
+import { generateCalendarWorkbook } from './export/calendar/generateCalendarWorkbook';
 
 const year = 2029;
 const days = Array.from({ length: 365 }, (_, index) => {
