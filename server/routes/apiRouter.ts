@@ -14,14 +14,16 @@ import { createCreateParameter, createUpdateParameter } from '../handlers/savePa
 import type { OfficialVacationsSource } from '../ports/OfficialVacationsSource';
 import type { ParametersRepository } from '../ports/ParametersRepository';
 import type { PlanningTypesRepository } from '../ports/PlanningTypesRepository';
+import type { VacationHistoryRepository } from '../ports/VacationHistoryRepository';
 
 export interface ApiDependencies {
   officialVacations: OfficialVacationsSource;
+  vacationHistory: VacationHistoryRepository;
   parameters: ParametersRepository;
   planningTypes: PlanningTypesRepository;
 }
 
-export function createApiRouter({ officialVacations, parameters, planningTypes }: ApiDependencies): Router {
+export function createApiRouter({ officialVacations, vacationHistory, parameters, planningTypes }: ApiDependencies): Router {
   const router = Router();
 
   router.get('/status', getStatus);
@@ -33,7 +35,7 @@ export function createApiRouter({ officialVacations, parameters, planningTypes }
     generateForecastWorkbook,
     'Erreur pendant la génération du prévisionnel Excel.',
   ));
-  router.get('/vacations/:year', createGetVacations(officialVacations));
+  router.get('/vacations/:year', createGetVacations({ officialVacations, history: vacationHistory }));
   router.get('/parameters', createGetParameters(parameters));
   router.post('/parameters', createCreateParameter({ parameters, planningTypes }));
   router.get('/parameters/:id', createGetParameter(parameters));

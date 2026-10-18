@@ -3,10 +3,12 @@ import LeaveSettingsPanel from '../common/LeaveSettingsPanel';
 import { CUSTOM_PROFILE, type LeaveProfiles, LeaveSettingKey, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 
 interface LeaveSettingsCardProps {
+  year: number;
   settings: LeaveSettings;
   profile: SelectedLeaveProfile;
   profiles: LeaveProfiles;
   error: string;
+  onYearChange: (value: string) => void;
   onProfileChange: (profile: SelectedLeaveProfile) => void;
   onSettingChange: (setting: LeaveSettingKey, value: string) => void;
   onSettingBlur: (setting: LeaveSettingKey) => void;
@@ -14,7 +16,7 @@ interface LeaveSettingsCardProps {
 }
 
 function LeaveSettingsCard({
-  settings, profile, profiles, error, onProfileChange, onSettingChange, onSettingBlur, onCalculate,
+  year, settings, profile, profiles, error, onYearChange, onProfileChange, onSettingChange, onSettingBlur, onCalculate,
 }: LeaveSettingsCardProps) {
   const isCustom = profile === CUSTOM_PROFILE;
 
@@ -29,6 +31,12 @@ function LeaveSettingsCard({
       onSettingChange={onSettingChange}
       onSettingBlur={onSettingBlur}
     >
+      <div className="field-row">
+        <label>
+          Année
+          <input type="number" min="2020" max="2050" value={year} onChange={(event) => onYearChange(event.target.value)} />
+        </label>
+      </div>
       {isCustom ? <p className="help-text">Les paramètres personnalisés sont appliqués au calendrier après clic sur « Calculer ».</p> : null}
       {error ? <Alert role="alert">{error}</Alert> : null}
       {isCustom ? <button className="primary-button calculate-button" type="button" onClick={onCalculate}>Calculer</button> : null}

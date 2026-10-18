@@ -1,4 +1,5 @@
 import type { EntitySchema } from '@mikro-orm/core';
+import { HolidayHistorySchema } from './HolidayHistorySchema';
 import { ParameterAtsemSchema } from './ParameterAtsemSchema';
 import { ParameterSchema } from './ParameterSchema';
 import { ParameterStandardSchema } from './ParameterStandardSchema';
@@ -10,4 +11,5 @@ export const entities: EntitySchema<any>[] = [
   ParameterSchema,
   ParameterAtsemSchema,
   ParameterStandardSchema,
+  HolidayHistorySchema,
 ];

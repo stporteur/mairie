@@ -5,7 +5,6 @@ interface VacationCardProps {
   year: number;
   vacations: VacationPeriod[];
   source: VacationSource | null;
-  onYearChange: (value: string) => void;
   onVacationChange: (index: number, field: 'start' | 'end', value: string) => void;
 }
 
@@ -20,16 +19,10 @@ function VacationSourceText({ source }: { source: VacationSource }) {
   );
 }
 
-function VacationCard({ year, vacations, source, onYearChange, onVacationChange }: VacationCardProps) {
+function VacationCard({ year, vacations, source, onVacationChange }: VacationCardProps) {
   return (
     <details className="card collapsible-card">
       <summary><h2>Vacances scolaires</h2></summary>
-      <div className="field-row">
-        <label>
-          Année
-          <input type="number" min="2020" max="2050" value={year} onChange={(event) => onYearChange(event.target.value)} />
-        </label>
-      </div>
       {vacations.length > 0 ? (
         <div className={`vacation-display ${source?.estimated ? 'estimated-vacation' : ''}`}>
           <p>Vacances scolaires zone C pour {year}:</p>

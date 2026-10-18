@@ -1,9 +1,16 @@
 import type { Request, Response } from 'express';
+import type { HistoricalVacation } from '../../shared/vacations';
 import { isSupportedVacationYear, resolveVacationsForYear } from '../domain/vacations';
 import type { OfficialVacationsData } from '../domain/vacations';
 import type { OfficialVacationsSource } from '../ports/OfficialVacationsSource';
+import type { VacationHistoryRepository } from '../ports/VacationHistoryRepository';
 
-export function createGetVacations(source: OfficialVacationsSource) {
+export interface GetVacationsDeps {
+  officialVacations: OfficialVacationsSource;
+  history: VacationHistoryRepository;
+}
+
+export function createGetVacations({ officialVacations, history }: GetVacationsDeps) {
   return async (req: Request, res: Response): Promise<void> => {
     const year = Number(req.params.year);
     if (!isSupportedVacationYear(year)) {
@@ -13,11 +20,18 @@ export function createGetVacations(source: OfficialVacationsSource) {
 
     let official: OfficialVacationsData | null = null;
     try {
-      official = await source.getOfficialVacations();
+      official = await officialVacations.getOfficialVacations();
     } catch {
-      // Continue with local data and then the estimate if the source is unavailable.
+      // Continue with the estimate if the source is unavailable.
     }
 
-    res.json({ year, zone: 'C', ...resolveVacationsForYear(year, official) });
+    let past: HistoricalVacation[] = [];
+    try {
+      past = await history.findAll();
+    } catch {
+      // Without history, only the fixed-rule periods (Christmas, summer) are estimated.
+    }
+
+    res.json({ year, zone: 'C', ...resolveVacationsForYear(year, official, past) });
   };
 }

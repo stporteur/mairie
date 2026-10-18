@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+  <changeSet id="holidays-history-001-table" author="mairie">
+    <createTable tableName="holidays_history">
+      <column name="id" type="integer" autoIncrement="true">
+        <constraints primaryKey="true" primaryKeyName="pk_holidays_history" nullable="false"/>
+      </column>
+      <column name="name" type="varchar(12)" remarks="Clé de la période : noel, hiver, printemps, ete, toussaint">
+        <constraints nullable="false"/>
+      </column>
+      <column name="date_start" type="date">
+        <constraints nullable="false"/>
+      </column>
+      <column name="date_end" type="date">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+
+  <!-- Vacances scolaires zone C, une ligne par période (source : data.gouv.fr « vacances-scolaires-par-zones »). -->
+  <changeSet id="holidays-history-002-data" author="mairie">
+    <loadData tableName="holidays_history" file="data/holidays_history.csv" relativeToChangelogFile="true" encoding="UTF-8">
+      <column name="name" type="STRING"/>
+      <column name="date_start" type="DATE"/>
+      <column name="date_end" type="DATE"/>
+    </loadData>
+    <rollback>
+      <delete tableName="holidays_history"/>
+    </rollback>
+  </changeSet>
+
+</databaseChangeLog>

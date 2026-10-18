@@ -2,6 +2,9 @@ databaseChangeLog:
   - include:
       file: ../../liquibase/parameters.xml
       relativeToChangelogFile: true
+  - include:
+      file: ../../liquibase/holidays_history.xml
+      relativeToChangelogFile: true
   - includeAll:
       path: migrations/
       relativeToChangelogFile: true

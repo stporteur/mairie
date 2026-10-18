@@ -5,6 +5,7 @@ import { createDataGouvOfficialVacationsSource } from './infrastructure/official
 import { createOrm } from './infrastructure/persistence/createOrm';
 import { MikroOrmParametersRepository } from './infrastructure/persistence/MikroOrmParametersRepository';
 import { MikroOrmPlanningTypesRepository } from './infrastructure/persistence/MikroOrmPlanningTypesRepository';
+import { MikroOrmVacationHistoryRepository } from './infrastructure/persistence/MikroOrmVacationHistoryRepository';
 
 const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 
@@ -15,6 +16,7 @@ async function main(): Promise<void> {
   const app = createApp({
     clientDist: path.resolve(__dirname, '../client/dist'),
     officialVacations: createDataGouvOfficialVacationsSource(),
+    vacationHistory: new MikroOrmVacationHistoryRepository(orm),
     parameters: new MikroOrmParametersRepository(orm),
     planningTypes: new MikroOrmPlanningTypesRepository(orm),
   });

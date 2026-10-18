@@ -15,10 +15,12 @@ function PlanningPage({ model }: { model: PlanningPageModel }) {
     <>
       <section className="config-panel">
         <LeaveSettingsCard
+          year={model.year}
           settings={model.settings}
           profile={model.profile}
           profiles={model.profiles}
           error={hasProfile ? model.calculationError : ''}
+          onYearChange={model.onYearChange}
           onProfileChange={model.onProfileChange}
           onSettingChange={model.onSettingChange}
           onSettingBlur={model.onSettingBlur}
@@ -29,7 +31,6 @@ function PlanningPage({ model }: { model: PlanningPageModel }) {
             year={model.year}
             vacations={model.vacations}
             source={model.vacationSource}
-            onYearChange={model.onYearChange}
             onVacationChange={model.onVacationChange}
           />
         ) : null}

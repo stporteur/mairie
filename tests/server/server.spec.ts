@@ -32,24 +32,39 @@ describe('server vacations domain', () => {
     expect(isSupportedVacationYear(2026.5)).toBe(false);
   });
 
-  it('uses local data for known years and estimates for the others', () => {
-    expect(resolveVacationsForYear(2026, null).source).toEqual({ local: true });
+  it('estimates the vacations when there is no official data', () => {
+    expect(resolveVacationsForYear(2026, null).source).toEqual({ estimated: true });
     expect(resolveVacationsForYear(2040, null).source).toEqual({ estimated: true });
   });
 });
 
 describe('GET /api/vacations/:year handler', () => {
+  const noHistory = { findAll: jest.fn().mockResolvedValue([]) };
+
   it('rejects unsupported years', async () => {
     const res = fakeResponse();
-    await createGetVacations({ getOfficialVacations: jest.fn() })(asReq({ params: { year: '1999' } }), asRes(res));
+    await createGetVacations({ officialVacations: { getOfficialVacations: jest.fn() }, history: noHistory })(
+      asReq({ params: { year: '1999' } }), asRes(res),
+    );
     expect(res.statusCode).toBe(400);
   });
 
-  it('falls back to local data when the official source fails', async () => {
+  it('falls back to the estimate when the official source fails', async () => {
     const res = fakeResponse();
-    const source = { getOfficialVacations: jest.fn().mockRejectedValue(new Error('down')) };
-    await createGetVacations(source)(asReq({ params: { year: '2026' } }), asRes(res));
-    expect(res.body).toMatchObject({ year: 2026, zone: 'C', source: { local: true } });
+    const officialVacations = { getOfficialVacations: jest.fn().mockRejectedValue(new Error('down')) };
+    const history = { findAll: jest.fn().mockResolvedValue([{ name: 'hiver', start: '2022-02-19', end: '2022-03-06' }]) };
+    await createGetVacations({ officialVacations, history })(asReq({ params: { year: '2029' } }), asRes(res));
+    expect(res.body).toMatchObject({ year: 2029, zone: 'C', source: { estimated: true } });
+    expect((res.body as { vacations: Array<{ name: string }> }).vacations.some(({ name }) => name.includes('hiver'))).toBe(true);
+  });
+
+  it('still answers with the fixed-rule periods when the history is unavailable', async () => {
+    const res = fakeResponse();
+    const officialVacations = { getOfficialVacations: jest.fn().mockResolvedValue(null) };
+    const history = { findAll: jest.fn().mockRejectedValue(new Error('db down')) };
+    await createGetVacations({ officialVacations, history })(asReq({ params: { year: '2029' } }), asRes(res));
+    expect(res.statusCode).toBe(200);
+    expect((res.body as { vacations: unknown[] }).vacations.length).toBeGreaterThan(0);
   });
 });
 
