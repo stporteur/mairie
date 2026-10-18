@@ -86,9 +86,16 @@ const official = resolveVacationsForYear(2025, {
   years: { 2025: { C: [officialPeriod] } },
   source: { dataset: 'official-test' },
 }, history);
-assert.deepEqual(official.vacations[0], { ...officialPeriod, estimated: false });
+assert.deepEqual(official.vacations.find((period) => period.start === officialPeriod.start), { ...officialPeriod, estimated: false });
 assert.equal(official.source.dataset, 'official-test');
 assert.equal(official.source.estimated, true);
+
+const stored = resolveVacationsForYear(2025, {
+  years: { 2025: { C: [{ name: 'Officiel', start: '2025-02-15', end: '2025-03-02' }] } },
+}, [{ name: 'hiver', start: '2025-02-20', end: '2025-03-05' }]);
+assert.ok(stored.vacations.some((period) => period.name === 'Vacances d’hiver' && period.start === '2025-02-20' && !period.estimated));
+assert.ok(!stored.vacations.some((period) => period.name === 'Officiel'));
+assert.equal(stored.source.local, true);
 
 const partialOfficial = resolveVacationsForYear(2028, {
   years: {

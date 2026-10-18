@@ -39,7 +39,7 @@ describe('server vacations domain', () => {
 });
 
 describe('GET /api/vacations/:year handler', () => {
-  const noHistory = { findAll: jest.fn().mockResolvedValue([]) };
+  const noHistory = { findAll: jest.fn().mockResolvedValue([]), addMissing: jest.fn().mockResolvedValue([]) };
 
   it('rejects unsupported years', async () => {
     const res = fakeResponse();
@@ -52,7 +52,10 @@ describe('GET /api/vacations/:year handler', () => {
   it('falls back to the estimate when the official source fails', async () => {
     const res = fakeResponse();
     const officialVacations = { getOfficialVacations: jest.fn().mockRejectedValue(new Error('down')) };
-    const history = { findAll: jest.fn().mockResolvedValue([{ name: 'hiver', start: '2022-02-19', end: '2022-03-06' }]) };
+    const history = {
+      findAll: jest.fn().mockResolvedValue([{ name: 'hiver', start: '2022-02-19', end: '2022-03-06' }]),
+      addMissing: jest.fn().mockResolvedValue([]),
+    };
     await createGetVacations({ officialVacations, history })(asReq({ params: { year: '2029' } }), asRes(res));
     expect(res.body).toMatchObject({ year: 2029, zone: 'C', source: { estimated: true } });
     expect((res.body as { vacations: Array<{ name: string }> }).vacations.some(({ name }) => name.includes('hiver'))).toBe(true);
@@ -61,10 +64,50 @@ describe('GET /api/vacations/:year handler', () => {
   it('still answers with the fixed-rule periods when the history is unavailable', async () => {
     const res = fakeResponse();
     const officialVacations = { getOfficialVacations: jest.fn().mockResolvedValue(null) };
-    const history = { findAll: jest.fn().mockRejectedValue(new Error('db down')) };
+    const history = {
+      findAll: jest.fn().mockRejectedValue(new Error('db down')),
+      addMissing: jest.fn().mockRejectedValue(new Error('db down')),
+    };
     await createGetVacations({ officialVacations, history })(asReq({ params: { year: '2029' } }), asRes(res));
     expect(res.statusCode).toBe(200);
     expect((res.body as { vacations: unknown[] }).vacations.length).toBeGreaterThan(0);
+  });
+
+  it('does not query the official source when the history covers the year', async () => {
+    const res = fakeResponse();
+    const getOfficialVacations = jest.fn();
+    const full = ['noel', 'hiver', 'printemps', 'ete', 'toussaint'].map((name, index) => ({
+      name, start: `2024-0${index + 1}-10`, end: `2024-0${index + 1}-20`,
+    }));
+    const history = { findAll: jest.fn().mockResolvedValue(full), addMissing: jest.fn() };
+    await createGetVacations({ officialVacations: { getOfficialVacations }, history })(
+      asReq({ params: { year: '2024' } }), asRes(res),
+    );
+    expect(getOfficialVacations).not.toHaveBeenCalled();
+    const { vacations } = res.body as { vacations: Array<{ estimated: boolean }> };
+    expect(vacations.filter(({ estimated }) => !estimated)).toHaveLength(5);
+  });
+
+  it('stores the official periods missing from the history', async () => {
+    const res = fakeResponse();
+    const official = {
+      years: {
+        '2024': [
+          { name: 'Vacances de Noël', start: '2024-12-21', end: '2024-12-31' },
+          { name: 'Pont de l’Ascension', start: '2024-05-08', end: '2024-05-12' },
+          { name: 'Vacances d’Été', start: '2024-07-06', end: '2024-08-31' },
+        ],
+        '2025': [{ name: 'Vacances de Noël', start: '2025-01-01', end: '2025-01-05' }],
+      },
+    };
+    const history = { findAll: jest.fn().mockResolvedValue([]), addMissing: jest.fn().mockResolvedValue([]) };
+    await createGetVacations({ officialVacations: { getOfficialVacations: jest.fn().mockResolvedValue(official) }, history })(
+      asReq({ params: { year: '2029' } }), asRes(res),
+    );
+    expect(history.addMissing).toHaveBeenCalledWith([
+      { name: 'noel', start: '2024-12-21', end: '2025-01-05' },
+      { name: 'ete', start: '2024-07-06', end: '2024-08-31' },
+    ].sort((a, b) => a.start.localeCompare(b.start)));
   });
 });
 
