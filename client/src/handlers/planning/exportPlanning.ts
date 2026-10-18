@@ -3,13 +3,14 @@ import type { AppServices } from '@/application/AppServices';
 import type { TrainingCalendarDay } from '@/domain/calendar/types';
 import { planningFilename } from '@/domain/export/filenames';
 import { getProfileLabel } from '@/domain/settings/leaveProfiles';
-import type { LeaveProfiles, SelectedLeaveProfile } from '@/domain/settings/types';
+import type { LeaveProfiles, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
 import type { StateSetter } from '../types';
 
 export interface ExportPlanningDeps {
   year: number;
   profiles: LeaveProfiles;
   profile: SelectedLeaveProfile;
+  settings: LeaveSettings;
   calendar: TrainingCalendarDay[];
   exporting: boolean;
   setExporting: StateSetter<boolean>;
@@ -17,7 +18,7 @@ export interface ExportPlanningDeps {
   services: Pick<AppServices, 'exports' | 'downloader'>;
 }
 
-export function createExportPlanning(deps: ExportPlanningDeps) {
+export function createExportPlanning(deps: ExportPlanningDeps, format: 'xlsx' | 'pdf' = 'xlsx') {
   return async (): Promise<void> => {
     if (!deps.calendar.length || deps.exporting) return;
     deps.setExporting(true);
@@ -25,9 +26,10 @@ export function createExportPlanning(deps: ExportPlanningDeps) {
     try {
       const label = getProfileLabel(deps.profiles, deps.profile);
       const file = await deps.services.exports.exportCalendar(
-        buildCalendarExportRequest(deps.year, label, deps.calendar),
+        buildCalendarExportRequest(deps.year, label, deps.calendar, deps.settings),
+        format,
       );
-      deps.services.downloader.download(file, planningFilename(deps.year, label));
+      deps.services.downloader.download(file, planningFilename(deps.year, label, format));
     } catch (failure) {
       deps.setError(failure instanceof Error ? failure.message : 'Erreur pendant la création du fichier Excel.');
     } finally {

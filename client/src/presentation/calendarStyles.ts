@@ -22,12 +22,13 @@ function getBaseCellClass(day: DayLike): string {
 }
 
 export function getCalendarCellClass(day: DayLike): string {
+  if (day.isHoliday) return 'holiday-cell';
   if (day.inVacation && day.vacationEstimated) {
-    return day.isWeekend || day.isHoliday
+    return day.isWeekend
       ? 'estimated-vacation-weekend-cell'
       : 'estimated-vacation-weekday-cell';
   }
   if (day.isRestDay) return 'rest-day-cell';
-  if (day.isWeekend || day.isHoliday) return 'offday-cell';
+  if (day.isWeekend) return 'offday-cell';
   return getBaseCellClass(day);
 }

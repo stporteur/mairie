@@ -163,6 +163,7 @@ describe('planning handlers', () => {
       year: 2026,
       profiles: PROFILES,
       profile: 'atsem365',
+      settings: { cpDays: '25', rttDays: '9', schoolWeeklyHours: '37', vacationWeeklyHours: '35' },
       calendar: [{ date: '2026-01-01' } as never],
       exporting: false,
       setExporting: exporting.set,
@@ -170,9 +171,30 @@ describe('planning handlers', () => {
       services: { exports: { exportCalendar, exportForecast: jest.fn(), exportForecastComparison: jest.fn() }, downloader: { download } },
     })();
 
-    expect(exportCalendar).toHaveBeenCalledWith(expect.objectContaining({ year: 2026, profile: '36h30 ATSEM' }));
+    expect(exportCalendar).toHaveBeenCalledWith(expect.objectContaining({ year: 2026, profile: '36h30 ATSEM' }), 'xlsx');
     expect(download).toHaveBeenCalledWith(blob, 'Planing_2026_36H30_ATSEM.xlsx');
     expect(exporting.state.value).toBe(false);
+  });
+
+  it('exports the planning as a PDF with a .pdf name', async () => {
+    const blob = new Blob(['x']);
+    const exportCalendar = jest.fn().mockResolvedValue(blob);
+    const download = jest.fn();
+
+    await createExportPlanning({
+      year: 2026,
+      profiles: PROFILES,
+      profile: 'atsem365',
+      settings: { cpDays: '25', rttDays: '9', schoolWeeklyHours: '37', vacationWeeklyHours: '35' },
+      calendar: [{ date: '2026-01-01' } as never],
+      exporting: false,
+      setExporting: jest.fn(),
+      setError: jest.fn(),
+      services: { exports: { exportCalendar, exportForecast: jest.fn(), exportForecastComparison: jest.fn() }, downloader: { download } },
+    }, 'pdf')();
+
+    expect(exportCalendar).toHaveBeenCalledWith(expect.anything(), 'pdf');
+    expect(download).toHaveBeenCalledWith(blob, 'Planing_2026_36H30_ATSEM.pdf');
   });
 
   it('reports export failures', async () => {
@@ -181,9 +203,10 @@ describe('planning handlers', () => {
       year: 2026,
       profiles: PROFILES,
       profile: 'custom',
-      calendar: [{ date: '2026-01-01' } as never],
-      exporting: false,
-      setExporting: jest.fn(),
+      settings: { cpDays: '25', rttDays: '9', schoolWeeklyHours: '37',       vacationWeeklyHours: '35' },
+            calendar: [{ date: '2026-01-01' } as never],
+            exporting: false,
+            setExporting: jest.fn(),
       setError: error.set,
       services: {
         exports: { exportCalendar: jest.fn().mockRejectedValue(new Error('Échec')), exportForecast: jest.fn(), exportForecastComparison: jest.fn() },
@@ -199,6 +222,7 @@ describe('planning handlers', () => {
       year: 2026,
       profiles: PROFILES,
       profile: 'custom' as const,
+      settings: { cpDays: '25', rttDays: '9', schoolWeeklyHours: '37', vacationWeeklyHours: '35' },
       setExporting: jest.fn(),
       setError: jest.fn(),
       services: { exports: { exportCalendar, exportForecast: jest.fn(), exportForecastComparison: jest.fn() }, downloader: { download: jest.fn() } },
@@ -312,7 +336,7 @@ describe('forecast handlers', () => {
       year: 2026 + i, cpDays: 25, rttDays: 15, totalLeave: 40, workHours: 1500, hoursDue: 107,
     }));
     await createExportForecast({ ...base, rows })();
-    expect(exportForecast).toHaveBeenCalledWith({ startYear: 2026, profile: '37h30 MAIRIE', rows });
+    expect(exportForecast).toHaveBeenCalledWith({ startYear: 2026, profile: '37h30 MAIRIE', rows }, 'xlsx');
     expect(download).toHaveBeenCalledWith(expect.any(Blob), 'Previsionnel_2026_37h30_MAIRIE.xlsx');
   });
 });

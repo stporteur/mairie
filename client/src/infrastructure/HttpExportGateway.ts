@@ -16,15 +16,15 @@ async function postForFile(url: string, body: unknown): Promise<Blob> {
 }
 
 export class HttpExportGateway implements ExportGateway {
-  exportCalendar(request: ExportCalendarRequest): Promise<Blob> {
-    return postForFile('/api/export', request);
+  exportCalendar(request: ExportCalendarRequest, format: 'xlsx' | 'pdf' = 'xlsx'): Promise<Blob> {
+    return postForFile(format === 'pdf' ? '/api/export/pdf' : '/api/export', request);
   }
 
-  exportForecast(request: ForecastExportRequest): Promise<Blob> {
-    return postForFile('/api/export/forecast', request);
+  exportForecast(request: ForecastExportRequest, format: 'xlsx' | 'pdf' = 'xlsx'): Promise<Blob> {
+    return postForFile(format === 'pdf' ? '/api/export/forecast/pdf' : '/api/export/forecast', request);
   }
 
-  exportForecastComparison(request: ForecastComparisonExportRequest): Promise<Blob> {
-    return postForFile('/api/export/forecast-comparison', request);
+  exportForecastComparison(request: ForecastComparisonExportRequest, format: 'xlsx' | 'pdf' = 'xlsx'): Promise<Blob> {
+    return postForFile(format === 'pdf' ? '/api/export/forecast-comparison/pdf' : '/api/export/forecast-comparison', request);
   }
 }

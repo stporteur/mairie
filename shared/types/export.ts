@@ -13,5 +13,6 @@ export interface ExportCalendarDay {
 export interface ExportCalendarRequest {
   year: number;
   profile: string;
+  profileDetails?: string;
   days: ExportCalendarDay[];
 }

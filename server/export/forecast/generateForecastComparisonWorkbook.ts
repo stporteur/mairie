@@ -93,6 +93,27 @@ export async function generateForecastComparisonWorkbook(
     }
   }
 
+  const totalRowNumber = 5 + YEAR_COUNT;
+  const totalRow = worksheet.getRow(totalRowNumber);
+  totalRow.getCell(1).value = 'TOTAL';
+  request.profiles.forEach((profile, index) => {
+    const first = 2 + index * 2;
+    totalRow.getCell(first + 1).value = Number(profile.rows.reduce((sum, row) => sum + row.hoursDue, 0).toFixed(2));
+  });
+  for (let column = 1; column <= lastColumn; column += 1) {
+    const cell = totalRow.getCell(column);
+    const startsGroup = column > 1 && column % 2 === 0;
+    cell.numFmt = '0.00';
+    cell.font = { bold: true };
+    cell.fill = fill('FFE5E7EB');
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = {
+      top: { style: 'medium', color: { argb: DARK } },
+      bottom: THIN,
+      left: startsGroup ? GROUP_SEPARATOR : THIN,
+    };
+  }
+
   return {
     buffer: await workbook.xlsx.writeBuffer(),
     filename: `Comparatif_${request.startYear}.xlsx`,

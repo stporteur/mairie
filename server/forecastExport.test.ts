@@ -55,6 +55,9 @@ async function run(): Promise<void> {
   assert.equal(comparisonSheet.getCell('A14').value, 2035);
   assert.equal(comparisonSheet.getCell('D5').value, 1580);
   assert.equal(comparisonSheet.getCell('E14').value, 18);
+  assert.equal(comparisonSheet.getCell('A15').value, 'TOTAL');
+  assert.equal(comparisonSheet.getCell('C15').value, 225);
+  assert.equal(comparisonSheet.getCell('E15').value, 225);
 
   await assert.rejects(
     () => generateForecastComparisonWorkbook({ startYear: 2026, profiles: [] }),

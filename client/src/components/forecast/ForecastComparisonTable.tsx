@@ -47,6 +47,14 @@ function ForecastComparisonTable({ startYear, yearCount, cpDays, profiles, resul
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr className="comparison-total-row">
+            <th>TOTAL</th>
+            {profiles.map((profile) => (
+              <ComparisonTotalCells key={profile.key} rows={results[profile.key]} />
+            ))}
+          </tr>
+        </tfoot>
       </table>
     </section>
   );
@@ -57,6 +65,16 @@ function ComparisonSubHeaders() {
     <>
       <th className="profile-group-start">Total Heures</th>
       <th>Heures Dues</th>
+    </>
+  );
+}
+
+function ComparisonTotalCells({ rows }: { rows: ForecastSummaryRow[] | undefined }) {
+  const total = (rows ?? []).reduce((sum, row) => sum + row.hoursDue, 0);
+  return (
+    <>
+      <td className="profile-group-start" />
+      <td>{total.toFixed(2)}</td>
     </>
   );
 }

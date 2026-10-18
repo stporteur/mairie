@@ -84,6 +84,11 @@ try {
     npx tsc -p server/tsconfig.json --outDir $InstallDir
     if ($LASTEXITCODE -ne 0) { throw 'Compilation du serveur en échec.' }
 
+    Write-Host '== Copie des modèles Excel'
+    $templateTarget = Join-Path $InstallDir 'server\template'
+    New-Item -ItemType Directory -Force -Path $templateTarget | Out-Null
+    Copy-Item (Join-Path $repo 'server\template\*') $templateTarget -Recurse -Force
+
     Write-Host '== Copie du client'
     $clientTarget = Join-Path $InstallDir 'client\dist'
     Remove-Item -Recurse -Force $clientTarget -ErrorAction SilentlyContinue

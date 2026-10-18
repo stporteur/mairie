@@ -52,7 +52,7 @@ function PlanningPage({ model }: { model: PlanningPageModel }) {
 
           <MonthlySummaryTable summaries={model.monthlySummaries} />
 
-          <ExportBar error={model.exportError} exporting={model.exporting} disabled={!model.canExport} onExport={model.onExport} />
+          <ExportBar error={model.exportError} exporting={model.exporting} disabled={!model.canExport} label="Export Excel" onExport={model.onExport} secondary={{ label: 'Export PDF', onClick: model.onExportPdf }} />
         </>
       ) : null}
     </>

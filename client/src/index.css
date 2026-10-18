@@ -391,6 +391,14 @@ button {
   letter-spacing: normal;
 }
 
+.comparison-total-row th,
+.comparison-total-row td {
+  background: #e5e7eb;
+  color: #111827;
+  font-weight: 800;
+  border-top: 2px solid #111827;
+}
+
 .comparison-table .profile-group-start {
   border-left: 2px solid #9ca3af;
 }
@@ -758,6 +766,12 @@ button {
 
 .offday-cell {
   background: #d1d5db !important;
+}
+
+.holiday-cell {
+  background: #4b5563 !important;
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .planning-table h2 {

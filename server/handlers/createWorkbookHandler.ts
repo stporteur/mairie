@@ -13,7 +13,7 @@ export function createWorkbookHandler<TRequest>(
   return async (req: Request, res: Response): Promise<void> => {
     try {
       const result = await generate(req.body as TRequest);
-      res.setHeader('Content-Type', XLSX_CONTENT_TYPE);
+      res.setHeader('Content-Type', result.contentType ?? XLSX_CONTENT_TYPE);
       res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
       res.status(200).send(Buffer.from(result.buffer));
     } catch (error) {

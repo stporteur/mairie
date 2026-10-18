@@ -35,7 +35,7 @@ function ForecastDetails({ model }: { model: ForecastPageModel }) {
       {model.rows.length > 0 ? (
         <>
           <ForecastTable startYear={startYear} yearCount={FORECAST_YEAR_COUNT} rows={model.rows} />
-          <ExportBar error="" exporting={model.exporting} disabled={model.exporting} label="Export Excel" onExport={model.onExport} />
+          <ExportBar error="" exporting={model.exporting} disabled={model.exporting} label="Export Excel" onExport={model.onExport} secondary={{ label: 'Export PDF', onClick: model.onExportPdf }} />
         </>
       ) : null}
     </>

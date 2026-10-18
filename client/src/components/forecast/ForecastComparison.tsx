@@ -7,7 +7,9 @@ import ForecastProfileCheckboxes from './ForecastProfileCheckboxes';
 
 function ForecastComparison({ model }: { model: ForecastComparisonModel }) {
   const { startYear, profiles, selected, results } = model;
-  const columns = profiles.filter((profile) => selected.includes(profile.key) && results[profile.key]);
+  const columns = profiles
+    .filter((profile) => selected.includes(profile.key) && results[profile.key])
+    .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
 
   return (
     <>
@@ -33,7 +35,7 @@ function ForecastComparison({ model }: { model: ForecastComparisonModel }) {
             profiles={columns}
             results={results}
           />
-          <ExportBar error="" exporting={model.exporting} disabled={model.exporting || !model.canExport} label="Export Excel" onExport={model.onExport} />
+          <ExportBar error="" exporting={model.exporting} disabled={model.exporting || !model.canExport} label="Export Excel" onExport={model.onExport} secondary={{ label: 'Export PDF', onClick: model.onExportPdf }} />
         </>
       ) : null}
     </>

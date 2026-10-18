@@ -2,6 +2,9 @@ import { Router } from 'express';
 import type { ExportCalendarRequest } from '../../shared/types/export';
 import type { ForecastComparisonExportRequest, ForecastExportRequest } from '../../shared/types/forecast';
 import { generateCalendarWorkbook } from '../export/calendar/generateCalendarWorkbook';
+import { generateCalendarPdf } from '../export/calendar/generateCalendarPdf';
+import { generateForecastComparisonPdf } from '../export/forecast/generateForecastComparisonPdf';
+import { generateForecastPdf } from '../export/forecast/generateForecastPdf';
 import { generateForecastComparisonWorkbook } from '../export/forecast/generateForecastComparisonWorkbook';
 import { generateForecastWorkbook } from '../export/forecast/generateForecastWorkbook';
 import { createWorkbookHandler } from '../handlers/createWorkbookHandler';
@@ -31,6 +34,18 @@ export function createApiRouter({ officialVacations, vacationHistory, parameters
   router.post('/export', createWorkbookHandler<ExportCalendarRequest>(
     generateCalendarWorkbook,
     'Erreur pendant la génération du fichier Excel.',
+  ));
+  router.post('/export/pdf', createWorkbookHandler<ExportCalendarRequest>(
+    generateCalendarPdf,
+    'Erreur pendant la génération du fichier PDF.',
+  ));
+  router.post('/export/forecast/pdf', createWorkbookHandler<ForecastExportRequest>(
+    generateForecastPdf,
+    'Erreur pendant la génération du prévisionnel PDF.',
+  ));
+  router.post('/export/forecast-comparison/pdf', createWorkbookHandler<ForecastComparisonExportRequest>(
+    generateForecastComparisonPdf,
+    'Erreur pendant la génération du comparatif PDF.',
   ));
   router.post('/export/forecast', createWorkbookHandler<ForecastExportRequest>(
     generateForecastWorkbook,

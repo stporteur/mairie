@@ -49,6 +49,17 @@ export function useForecastPage({ startYear, profiles, initialSettings, initialP
     void calculateFor(applyProfileToSettings(profiles, form.settings, selected), selected)();
   };
 
+  const exportDeps = {
+    startYear,
+    profiles,
+    profile: form.profile,
+    rows,
+    exporting,
+    setExporting,
+    setError,
+    services,
+  };
+
   return {
     startYear,
     rows,
@@ -62,16 +73,8 @@ export function useForecastPage({ startYear, profiles, initialSettings, initialP
     onSettingChange: form.changeSetting,
     onProfileChange: changeProfile,
     onCalculate: calculateFor(form.settings, form.profile),
-    onExport: createExportForecast({
-      startYear,
-      profiles,
-      profile: form.profile,
-      rows,
-      exporting,
-      setExporting,
-      setError,
-      services,
-    }),
+    onExport: createExportForecast(exportDeps),
+    onExportPdf: createExportForecast(exportDeps, 'pdf'),
   };
 }
 

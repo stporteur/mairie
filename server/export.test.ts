@@ -32,7 +32,7 @@ function assertFill(cell: ExcelJS.Cell, expectedArgb: string): void {
 }
 
 async function run(): Promise<void> {
-  const generated = await generateCalendarWorkbook({ year, profile: '37h30 MAIRIE', days });
+  const generated = await generateCalendarWorkbook({ year, profile: '37h30 MAIRIE', profileDetails: '9 jours RTT · 35 h vacances · 37 h scolaire', days });
   assert.equal(generated.filename, 'Planing_2029_37H30_MAIRIE.xlsx');
 
   const workbook = new ExcelJS.Workbook();
@@ -56,7 +56,7 @@ async function run(): Promise<void> {
   assertFill(sheet.getCell('A4'), 'FF111827'); // Congés row label.
   assert.equal(sheet.getCell('B3').value, null); // Jan 1 is a holiday and has no work hours.
   assertFill(sheet.getCell('B1'), 'FF111827'); // Headers are dark except when in vacation.
-  assertFill(sheet.getCell('B3'), 'FFD1D5DB'); // Holiday body color.
+  assertFill(sheet.getCell('B3'), 'FF4B5563'); // Holiday body color (darker than weekends).
   assert.equal(sheet.getCell('C3').value, 9.25); // Jan 2 is worked during the Christmas break.
   assertFill(sheet.getCell('C1'), 'FFD8F3DC'); // Official-vacation header is green.
   assertFill(sheet.getCell('C3'), 'FFFFFFFF'); // Worked official-vacation weekday is white in the app.
@@ -77,6 +77,8 @@ async function run(): Promise<void> {
     .reduce((total, day) => total + day.effectiveHours, 0));
   assert.equal(sheet.getCell('AL59').formula, 'SUM(AI4,AI9,AI14,AI19,AI24,AI29,AI34,AI39,AI44,AI49,AI54,AI59)');
   assert.equal(sheet.getCell('AL59').result, 2);
+  assert.equal(sheet.getCell('AL16').value, `${year} - 37h30 MAIRIE`);
+  assert.equal(sheet.getCell('AK16').value, '9 jours RTT · 35 h vacances · 37 h scolaire');
 
   console.log('Calendar export tests passed.');
 }

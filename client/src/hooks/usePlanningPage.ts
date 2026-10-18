@@ -64,6 +64,17 @@ export function usePlanningPage(profiles: LeaveProfiles) {
 
   const summary = summarizeYear(calendar, NO_TRAINING_HOURS);
   const expectedLeave = cpQuota + rttQuota;
+  const exportDeps = {
+    year,
+    profiles,
+    profile: form.profile,
+    settings: appliedSettings,
+    calendar,
+    exporting,
+    setExporting,
+    setError: setExportError,
+    services,
+  };
 
   return {
     year,
@@ -114,16 +125,8 @@ export function usePlanningPage(profiles: LeaveProfiles) {
       setAppliedProfile,
       setError: setCalculationError,
     }),
-    onExport: createExportPlanning({
-      year,
-      profiles,
-      profile: form.profile,
-      calendar,
-      exporting,
-      setExporting,
-      setError: setExportError,
-      services,
-    }),
+    onExport: createExportPlanning(exportDeps),
+    onExportPdf: createExportPlanning(exportDeps, 'pdf'),
   };
 }
 

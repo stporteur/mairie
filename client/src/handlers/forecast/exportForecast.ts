@@ -17,7 +17,7 @@ export interface ExportForecastDeps {
   services: Pick<AppServices, 'exports' | 'downloader'>;
 }
 
-export function createExportForecast(deps: ExportForecastDeps) {
+export function createExportForecast(deps: ExportForecastDeps, format: 'xlsx' | 'pdf' = 'xlsx') {
   return async (): Promise<void> => {
     if (deps.rows.length !== FORECAST_YEAR_COUNT || deps.exporting) return;
     deps.setExporting(true);
@@ -28,8 +28,8 @@ export function createExportForecast(deps: ExportForecastDeps) {
         startYear: deps.startYear,
         profile: label,
         rows: deps.rows,
-      });
-      deps.services.downloader.download(file, forecastFilename(deps.startYear, label));
+      }, format);
+      deps.services.downloader.download(file, forecastFilename(deps.startYear, label, format));
     } catch (failure) {
       deps.setError(failure instanceof Error ? failure.message : 'Impossible d’exporter le prévisionnel.');
     } finally {

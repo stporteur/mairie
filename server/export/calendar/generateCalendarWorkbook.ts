@@ -19,6 +19,8 @@ const APP_COLORS = {
   estimatedVacationText: 'FF92400E',
   estimatedVacationOffdayBackground: 'FFFDE68A',
   offdayBackground: 'FFD1D5DB',
+  holidayBackground: 'FF4B5563',
+  holidayText: 'FFFFFFFF',
   restDayBackground: 'FFEFF2F7',
   weekdayBackground: 'FFFFFFFF',
 };
@@ -50,16 +52,18 @@ function setHeaderColors(cell: ExcelJS.Cell, day?: ExportCalendarDay): void {
 function setCalendarBodyColors(cell: ExcelJS.Cell, day?: ExportCalendarDay): void {
   if (!day) {
     setCellColors(cell, APP_COLORS.weekdayBackground, 'FF111827');
+  } else if (day.isHoliday) {
+    setCellColors(cell, APP_COLORS.holidayBackground, APP_COLORS.holidayText);
+    cell.font = { ...cell.font, bold: true, color: { argb: APP_COLORS.holidayText } };
   } else if (day.inVacation && day.vacationEstimated) {
-    const isEstimatedOffday = day.isWeekend || day.isHoliday;
     setCellColors(
       cell,
-      isEstimatedOffday ? APP_COLORS.estimatedVacationOffdayBackground : APP_COLORS.estimatedVacationBackground,
+      day.isWeekend ? APP_COLORS.estimatedVacationOffdayBackground : APP_COLORS.estimatedVacationBackground,
       'FF111827',
     );
   } else if (day.isRestDay) {
     setCellColors(cell, APP_COLORS.restDayBackground, 'FF111827');
-  } else if (day.isWeekend || day.isHoliday) {
+  } else if (day.isWeekend) {
     setCellColors(cell, APP_COLORS.offdayBackground, 'FF111827');
   } else if (day.inVacation) {
     setCellColors(cell, APP_COLORS.weekdayBackground, 'FF111827');
@@ -165,6 +169,10 @@ export async function generateCalendarWorkbook(
     formula: `SUM(${leaveTotalRows.map((row) => `AI${row}`).join(',')})`,
     result: annualLeaveTotal,
   };
+
+  // Only the text changes: the template's formatting is kept.
+  worksheet.getCell('AL16').value = `${request.year} - ${request.profile}`;
+  if (request.profileDetails !== undefined) worksheet.getCell('AK16').value = request.profileDetails;
 
   workbook.calcProperties.fullCalcOnLoad = true;
 

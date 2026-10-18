@@ -23,9 +23,11 @@ export function useForecastComparison({ startYear, profiles, settings }: Forecas
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
 
-  const exportedProfiles = profiles.filter((profile) => selected.includes(profile.key) && results[profile.key]);
+  const exportedProfiles = profiles
+    .filter((profile) => selected.includes(profile.key) && results[profile.key])
+    .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
 
-  const exportComparison = async (): Promise<void> => {
+  const exportComparison = async (format: 'xlsx' | 'pdf' = 'xlsx'): Promise<void> => {
     if (exportedProfiles.length === 0 || exporting) return;
     setExporting(true);
     setError('');
@@ -37,8 +39,8 @@ export function useForecastComparison({ startYear, profiles, settings }: Forecas
           description: describeProfileLeave(profile, settings.cpDays),
           rows: results[profile.key],
         })),
-      });
-      services.downloader.download(file, forecastComparisonFilename(startYear));
+      }, format);
+      services.downloader.download(file, forecastComparisonFilename(startYear, format));
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Impossible d’exporter le comparatif.');
     } finally {
@@ -80,7 +82,8 @@ export function useForecastComparison({ startYear, profiles, settings }: Forecas
     exporting,
     canExport: exportedProfiles.length > 0,
     error,
-    onExport: exportComparison,
+    onExport: () => exportComparison('xlsx'),
+    onExportPdf: () => exportComparison('pdf'),
     onToggleProfile: toggleProfile,
   };
 }
