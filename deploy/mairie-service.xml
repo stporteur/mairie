@@ -1,0 +1,15 @@
+<service>
+  <id>MairiePortal</id>
+  <name>Portail Mairie</name>
+  <description>Portail applicatif de la mairie (Express + React).</description>
+  <executable>__NODE__</executable>
+  <arguments>server\index.js</arguments>
+  <workingdirectory>__INSTALL_DIR__</workingdirectory>
+  <startmode>Automatic</startmode>
+  <onfailure action="restart" delay="10 sec"/>
+  <log mode="roll-by-size">
+    <sizeThreshold>5120</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+  <logpath>__INSTALL_DIR__\logs</logpath>
+</service>

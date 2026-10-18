@@ -7,10 +7,11 @@ import { MikroOrmParametersRepository } from './infrastructure/persistence/Mikro
 import { MikroOrmPlanningTypesRepository } from './infrastructure/persistence/MikroOrmPlanningTypesRepository';
 import { MikroOrmVacationHistoryRepository } from './infrastructure/persistence/MikroOrmVacationHistoryRepository';
 
-const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
+const DEFAULT_PORT = 4000;
 
 async function main(): Promise<void> {
   loadEnvFile();
+  const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : DEFAULT_PORT;
   const orm = await createOrm();
 
   const app = createApp({
