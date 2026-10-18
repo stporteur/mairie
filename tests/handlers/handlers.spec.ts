@@ -104,6 +104,20 @@ describe('planning handlers', () => {
     expect(vacations.state.value[0].end).toBe('2026-01-02');
   });
 
+  it('moves the end to the Sunday two weeks after when a start changes, but not when an end changes', () => {
+    const vacations = createState([
+      { name: 'Vacances d’hiver', start: '2026-02-14', end: '2026-03-01' },
+      { name: 'Grandes vacances', start: '2026-07-04', end: '2026-08-31' },
+    ]);
+    const edit = createEditVacationPeriod({ setVacations: vacations.set });
+    edit(0, 'start', '2026-02-21');
+    expect(vacations.state.value[0].end).toBe('2026-03-08');
+    edit(1, 'start', '2026-07-11');
+    expect(vacations.state.value[1].end).toBe('2026-08-31');
+    edit(0, 'end', '2026-03-10');
+    expect(vacations.state.value[0]).toMatchObject({ start: '2026-02-21', end: '2026-03-10' });
+  });
+
   it('refuses invalid school hours when calculating', () => {
     const error = createState('');
     const applied = createState(settings);

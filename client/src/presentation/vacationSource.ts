@@ -10,9 +10,11 @@ export function describeVacationSource(source: VacationSource): VacationSourceLa
   if (source.estimated) {
     return {
       kind: 'estimated',
-      text: source.resource
-        ? 'données officielles complétées par estimation — à vérifier'
-        : 'dates estimées — à vérifier',
+      text: source.local
+        ? 'données locales complétées par estimation — à vérifier'
+        : source.resource
+          ? 'données officielles complétées par estimation — à vérifier'
+          : 'dates estimées — à vérifier',
     };
   }
   if (source.local) return { kind: 'local', text: 'données locales' };

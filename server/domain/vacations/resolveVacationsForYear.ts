@@ -32,7 +32,7 @@ export function resolveVacationsForYear(
   return {
     vacations,
     source: {
-      ...(fromOfficial.length > 0 || stored.length === 0 ? official?.source : undefined),
+      ...(fromOfficial.length > 0 ? official?.source : undefined),
       ...(stored.length > 0 ? { local: true } : {}),
       ...(estimated.length > 0 ? { estimated: true } : {}),
     },
