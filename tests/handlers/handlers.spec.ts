@@ -167,7 +167,7 @@ describe('planning handlers', () => {
       exporting: false,
       setExporting: exporting.set,
       setError: error.set,
-      services: { exports: { exportCalendar, exportForecast: jest.fn() }, downloader: { download } },
+      services: { exports: { exportCalendar, exportForecast: jest.fn(), exportForecastComparison: jest.fn() }, downloader: { download } },
     })();
 
     expect(exportCalendar).toHaveBeenCalledWith(expect.objectContaining({ year: 2026, profile: '36h30 ATSEM' }));
@@ -186,7 +186,7 @@ describe('planning handlers', () => {
       setExporting: jest.fn(),
       setError: error.set,
       services: {
-        exports: { exportCalendar: jest.fn().mockRejectedValue(new Error('Échec')), exportForecast: jest.fn() },
+        exports: { exportCalendar: jest.fn().mockRejectedValue(new Error('Échec')), exportForecast: jest.fn(), exportForecastComparison: jest.fn() },
         downloader: { download: jest.fn() },
       },
     })();
@@ -201,7 +201,7 @@ describe('planning handlers', () => {
       profile: 'custom' as const,
       setExporting: jest.fn(),
       setError: jest.fn(),
-      services: { exports: { exportCalendar, exportForecast: jest.fn() }, downloader: { download: jest.fn() } },
+      services: { exports: { exportCalendar, exportForecast: jest.fn(), exportForecastComparison: jest.fn() }, downloader: { download: jest.fn() } },
     };
     await createExportPlanning({ ...deps, calendar: [], exporting: false })();
     await createExportPlanning({ ...deps, calendar: [{} as never], exporting: true })();
@@ -303,7 +303,7 @@ describe('forecast handlers', () => {
       exporting: false,
       setExporting: jest.fn(),
       setError: jest.fn(),
-      services: { exports: { exportCalendar: jest.fn(), exportForecast }, downloader: { download } },
+      services: { exports: { exportCalendar: jest.fn(), exportForecast, exportForecastComparison: jest.fn() }, downloader: { download } },
     };
     await createExportForecast({ ...base, rows: [] })();
     expect(exportForecast).not.toHaveBeenCalled();

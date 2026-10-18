@@ -363,6 +363,38 @@ button {
   gap: 10px 14px;
 }
 
+.forecast-mode-card {
+  margin-bottom: 18px;
+}
+
+.comparison-table th,
+.comparison-table td {
+  border-left: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.comparison-table th {
+  border: 1px solid #374151;
+}
+
+.comparison-table td:first-child {
+  border-left: none;
+}
+
+.comparison-table th strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.comparison-table th small {
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.comparison-table .profile-group-start {
+  border-left: 2px solid #9ca3af;
+}
+
 .leave-profile-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -390,7 +422,8 @@ button {
   background: #eff6ff;
 }
 
-.leave-profile-option input[type='radio'] {
+.leave-profile-option input[type='radio'],
+.leave-profile-option input[type='checkbox'] {
   flex: 0 0 auto;
   margin: 3px 0 0;
   accent-color: #2563eb;

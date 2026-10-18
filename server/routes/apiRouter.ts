@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import type { ExportCalendarRequest } from '../../shared/types/export';
-import type { ForecastExportRequest } from '../../shared/types/forecast';
+import type { ForecastComparisonExportRequest, ForecastExportRequest } from '../../shared/types/forecast';
 import { generateCalendarWorkbook } from '../export/calendar/generateCalendarWorkbook';
+import { generateForecastComparisonWorkbook } from '../export/forecast/generateForecastComparisonWorkbook';
 import { generateForecastWorkbook } from '../export/forecast/generateForecastWorkbook';
 import { createWorkbookHandler } from '../handlers/createWorkbookHandler';
 import { createDeleteParameter } from '../handlers/deleteParameter';
@@ -34,6 +35,10 @@ export function createApiRouter({ officialVacations, vacationHistory, parameters
   router.post('/export/forecast', createWorkbookHandler<ForecastExportRequest>(
     generateForecastWorkbook,
     'Erreur pendant la génération du prévisionnel Excel.',
+  ));
+  router.post('/export/forecast-comparison', createWorkbookHandler<ForecastComparisonExportRequest>(
+    generateForecastComparisonWorkbook,
+    'Erreur pendant la génération du comparatif Excel.',
   ));
   router.get('/vacations/:year', createGetVacations({ officialVacations, history: vacationHistory }));
   router.get('/parameters', createGetParameters(parameters));

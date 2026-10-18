@@ -9,3 +9,7 @@ export function planningFilename(year: number, profileLabel: string): string {
 export function forecastFilename(startYear: number, profileLabel: string): string {
   return `${sanitize(`Previsionnel_${startYear}_${profileLabel}`, /[^a-zA-Z0-9_]+/g)}.xlsx`;
 }
+
+export function forecastComparisonFilename(startYear: number): string {
+  return `Comparatif_${startYear}.xlsx`;
+}

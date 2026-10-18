@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
 import { generateForecastWorkbook } from './export/forecast/generateForecastWorkbook';
+import { generateForecastComparisonWorkbook } from './export/forecast/generateForecastComparisonWorkbook';
 
 async function run(): Promise<void> {
   const rows = Array.from({ length: 10 }, (_, index) => ({
@@ -35,6 +36,29 @@ async function run(): Promise<void> {
   await assert.rejects(
     () => generateForecastWorkbook({ startYear: 2026, profile: 'Custom', rows: rows.slice(0, 9) }),
     /exactement dix années/,
+  );
+
+  const comparison = await generateForecastComparisonWorkbook({
+    startYear: 2026,
+    profiles: [
+      { label: 'A', description: 'desc A', rows },
+      { label: 'B', description: 'desc B', rows },
+    ],
+  });
+  const comparisonBook = new ExcelJS.Workbook();
+  await comparisonBook.xlsx.load(comparison.buffer);
+  const comparisonSheet = comparisonBook.getWorksheet('Comparatif');
+  assert.ok(comparisonSheet);
+  assert.equal(comparisonSheet.getCell('A3').value, 'Année');
+  assert.equal(comparisonSheet.getCell('B4').value, 'Total Heures');
+  assert.equal(comparisonSheet.getCell('E4').value, 'Heures Dues');
+  assert.equal(comparisonSheet.getCell('A14').value, 2035);
+  assert.equal(comparisonSheet.getCell('D5').value, 1580);
+  assert.equal(comparisonSheet.getCell('E14').value, 18);
+
+  await assert.rejects(
+    () => generateForecastComparisonWorkbook({ startYear: 2026, profiles: [] }),
+    /au moins un profil/,
   );
 
   console.log('Forecast export tests passed.');

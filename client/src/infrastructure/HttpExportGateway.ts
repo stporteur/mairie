@@ -1,5 +1,5 @@
 import type { ExportCalendarRequest } from '@shared/types/export';
-import type { ForecastExportRequest } from '@shared/types/forecast';
+import type { ForecastComparisonExportRequest, ForecastExportRequest } from '@shared/types/forecast';
 import type { ExportGateway } from '@/ports/ExportGateway';
 
 async function postForFile(url: string, body: unknown): Promise<Blob> {
@@ -22,5 +22,9 @@ export class HttpExportGateway implements ExportGateway {
 
   exportForecast(request: ForecastExportRequest): Promise<Blob> {
     return postForFile('/api/export/forecast', request);
+  }
+
+  exportForecastComparison(request: ForecastComparisonExportRequest): Promise<Blob> {
+    return postForFile('/api/export/forecast-comparison', request);
   }
 }
