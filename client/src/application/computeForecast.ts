@@ -8,20 +8,22 @@ import { loadPreparedVacations } from './loadPreparedVacations';
 
 export interface ForecastRequest {
   startYear: number;
+  /** Number of projected years, {@link FORECAST_YEAR_COUNT} by default. */
+  yearCount?: number;
   parameters: LeaveParameters;
   onProgress?: (year: number, index: number, total: number) => void;
 }
 
-/** Computes the yearly summary for the {@link FORECAST_YEAR_COUNT} years following `startYear`. */
+/** Computes the yearly summary for `yearCount` years starting at `startYear`. */
 export async function computeForecast(
-  { startYear, parameters, onProgress }: ForecastRequest,
+  { startYear, yearCount = FORECAST_YEAR_COUNT, parameters, onProgress }: ForecastRequest,
   services: Pick<AppServices, 'vacations' | 'holidays'>,
 ): Promise<ForecastSummaryRow[]> {
   const rows: ForecastSummaryRow[] = [];
 
-  for (let offset = 0; offset < FORECAST_YEAR_COUNT; offset += 1) {
+  for (let offset = 0; offset < yearCount; offset += 1) {
     const year = startYear + offset;
-    onProgress?.(year, offset + 1, FORECAST_YEAR_COUNT);
+    onProgress?.(year, offset + 1, yearCount);
     const { vacations } = await loadPreparedVacations(services.vacations, year);
     rows.push(buildForecastRow(year, allocateYearLeave(year, vacations, parameters, services.holidays)));
   }

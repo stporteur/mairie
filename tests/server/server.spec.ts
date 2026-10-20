@@ -6,6 +6,7 @@ import { isSupportedVacationYear, resolveVacationsForYear } from '../../server/d
 import { CachedOfficialVacationsSource, ChainedOfficialVacationsSource } from '../../server/infrastructure/officialVacations/officialVacationsSources';
 import { parseVacationsCsv } from '../../server/infrastructure/officialVacations/vacationsParsing';
 import { safeProfileName } from '../../server/export/safeProfileName';
+import { STATISTICS_FROM_YEAR } from '../../shared/vacations';
 
 function fakeResponse() {
   const res = {
@@ -24,12 +25,13 @@ const asReq = (value: unknown) => value as Request;
 const asRes = (value: unknown) => value as Response;
 
 describe('server vacations domain', () => {
-  it('supports years from 2020 to 2059', () => {
-    expect(isSupportedVacationYear(2019)).toBe(false);
-    expect(isSupportedVacationYear(2020)).toBe(true);
-    expect(isSupportedVacationYear(2059)).toBe(true);
-    expect(isSupportedVacationYear(2060)).toBe(false);
-    expect(isSupportedVacationYear(2026.5)).toBe(false);
+  it('supports years from the first history year to 50 years ahead', () => {
+    const year = new Date().getFullYear();
+    expect(isSupportedVacationYear(STATISTICS_FROM_YEAR - 1)).toBe(false);
+    expect(isSupportedVacationYear(STATISTICS_FROM_YEAR)).toBe(true);
+    expect(isSupportedVacationYear(year + 50)).toBe(true);
+    expect(isSupportedVacationYear(year + 51)).toBe(false);
+    expect(isSupportedVacationYear(year + 0.5)).toBe(false);
   });
 
   it('estimates the vacations when there is no official data', () => {

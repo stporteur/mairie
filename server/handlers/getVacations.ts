@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import type { HistoricalVacation } from '../../shared/vacations';
 import { isYearCoveredByHistory } from '../domain/vacations/historyVacations';
 import { extractHistoricalVacations, isSupportedVacationYear, resolveVacationsForYear } from '../domain/vacations';
+import { maxSupportedYear, minSupportedYear } from '../domain/vacations/supportedYears';
 import type { OfficialVacationsData } from '../domain/vacations';
 import type { OfficialVacationsSource } from '../ports/OfficialVacationsSource';
 import type { VacationHistoryRepository } from '../ports/VacationHistoryRepository';
@@ -15,7 +16,7 @@ export function createGetVacations({ officialVacations, history }: GetVacationsD
   return async (req: Request, res: Response): Promise<void> => {
     const year = Number(req.params.year);
     if (!isSupportedVacationYear(year)) {
-      res.status(400).json({ error: 'L’année doit être un entier compris entre 2020 et 2059.' });
+      res.status(400).json({ error: `L’année doit être un entier compris entre ${minSupportedYear()} et ${maxSupportedYear()}.` });
       return;
     }
 

@@ -119,7 +119,22 @@ function cellRuns(cell: ExcelJS.Cell): TextRun[] {
   return text ? [{ text, ...base }] : [];
 }
 
-function drawText(doc: PDFKit.PDFDocument, cell: ExcelJS.Cell, runs: TextRun[], box: Box, scale: number): void {
+function fitFactor(doc: PDFKit.PDFDocument, cell: ExcelJS.Cell, runs: TextRun[], box: Box, scale: number): number {
+  const alignment = cell.alignment ?? {};
+  const rotated = typeof alignment.textRotation === 'number' && alignment.textRotation !== 0;
+  const available = (rotated ? box.height : box.width) - 3;
+  const wrap = Boolean(alignment.wrapText);
+  const measure = (run: TextRun): number => {
+    doc.font(run.bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(run.size * scale);
+    return wrap ? Math.max(...run.text.split(/\s+/).map((word) => doc.widthOfString(word))) : doc.widthOfString(run.text);
+  };
+  // Helvetica is wider than the template's Aptos Narrow: shrink so the widest run still fits.
+  return Math.min(1, ...runs.map((run) => available / measure(run)));
+}
+
+function drawText(
+  doc: PDFKit.PDFDocument, cell: ExcelJS.Cell, runs: TextRun[], box: Box, scale: number, forcedFactor?: number,
+): void {
   const alignment = cell.alignment ?? {};
   const rotation = typeof alignment.textRotation === 'number' ? alignment.textRotation : 0;
   const rotated = rotation !== 0;
@@ -128,13 +143,7 @@ function drawText(doc: PDFKit.PDFDocument, cell: ExcelJS.Cell, runs: TextRun[], 
   const available = area.width - padding * 2;
   const wrap = Boolean(alignment.wrapText);
 
-  const measure = (run: TextRun, factor: number): number => {
-    doc.font(run.bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(run.size * scale * factor);
-    return wrap ? Math.max(...run.text.split(/\s+/).map((word) => doc.widthOfString(word))) : doc.widthOfString(run.text);
-  };
-  // Helvetica is wider than the template's Aptos Narrow: shrink so the widest run still fits.
-  const factor = Math.min(1, ...runs.map((run) => available / measure(run, 1)));
-
+  const factor = forcedFactor ?? fitFactor(doc, cell, runs, box, scale);
   const options: PDFKit.Mixins.TextOptions = {
     width: available,
     align: alignment.horizontal === 'center' ? 'center' : alignment.horizontal === 'right' ? 'right' : 'left',
@@ -171,6 +180,16 @@ export interface WorksheetPdfOptions {
   /** Excel never enlarges a printout; 1 keeps small tables at their natural size. */
   maxScale?: number;
   centerVertically?: boolean;
+  marginX?: number;
+  marginY?: number;
+  /** Multiplies every row height (more breathing room, still fitted on one page). */
+  rowHeightFactor?: number;
+  /** Grows row heights to fill the page height when the width is the limiting side. */
+  stretchRows?: boolean;
+  /** Enlarges fonts; text is still shrunk to fit its cell width. */
+  fontBoost?: number;
+  /** Cells returning the same non-empty key are drawn with the same font size. */
+  fontGroup?: (row: number, column: number) => string | undefined;
 }
 
 /** Draws the first columns × rows cells of a worksheet on a single landscape page, scaled to fit. */
@@ -181,29 +200,34 @@ export async function renderWorksheetPdf(worksheet: ExcelJS.Worksheet, options: 
     const width = worksheet.getColumn(index + 1).width ?? defaultColumnWidth;
     return (width * 7 + 5) * PX_TO_PT;
   });
-  const rowHeights = Array.from({ length: options.rows }, (_, index) => worksheet.getRow(index + 1).height ?? defaultRowHeight);
+  const rowHeights = Array.from(
+    { length: options.rows },
+    (_, index) => (worksheet.getRow(index + 1).height ?? defaultRowHeight) * (options.rowHeightFactor ?? 1),
+  );
 
   const totalWidth = columnWidths.reduce((sum, value) => sum + value, 0);
   const totalHeight = rowHeights.reduce((sum, value) => sum + value, 0);
   const [pageWidth, pageHeight] = options.pageSize;
-  const scale = Math.min(
-    (pageWidth - 2 * MARGIN_X) / totalWidth,
-    (pageHeight - 2 * MARGIN_Y) / totalHeight,
-    options.maxScale ?? Infinity,
-  );
+  const marginX = options.marginX ?? MARGIN_X;
+  const marginY = options.marginY ?? MARGIN_Y;
+  const fitY = (pageHeight - 2 * marginY) / totalHeight;
+  const baseScale = Math.min((pageWidth - 2 * marginX) / totalWidth, fitY, options.maxScale ?? Infinity);
+  const scale = baseScale; // horizontal scale, also used for fonts
+  const scaleY = options.stretchRows ? Math.max(baseScale, fitY) : baseScale;
+  const fontScale = baseScale * (options.fontBoost ?? 1);
   const originX = (pageWidth - totalWidth * scale) / 2;
-  const originY = options.centerVertically === false ? MARGIN_Y : (pageHeight - totalHeight * scale) / 2;
+  const originY = options.centerVertically === false ? marginY : (pageHeight - totalHeight * scaleY) / 2;
 
   const columnStarts: number[] = [];
   columnWidths.reduce((sum, value) => { columnStarts.push(originX + sum * scale); return sum + value; }, 0);
   const rowStarts: number[] = [];
-  rowHeights.reduce((sum, value) => { rowStarts.push(originY + sum * scale); return sum + value; }, 0);
+  rowHeights.reduce((sum, value) => { rowStarts.push(originY + sum * scaleY); return sum + value; }, 0);
 
   const cellBox = (row: number, column: number, rowSpan = 1, columnSpan = 1): Box => ({
     x: columnStarts[column - 1],
     y: rowStarts[row - 1],
     width: columnWidths.slice(column - 1, column - 1 + columnSpan).reduce((sum, value) => sum + value, 0) * scale,
-    height: rowHeights.slice(row - 1, row - 1 + rowSpan).reduce((sum, value) => sum + value, 0) * scale,
+    height: rowHeights.slice(row - 1, row - 1 + rowSpan).reduce((sum, value) => sum + value, 0) * scaleY,
   });
 
   const merges = new Map<string, { rowSpan: number; columnSpan: number }>();
@@ -232,6 +256,18 @@ export async function renderWorksheetPdf(worksheet: ExcelJS.Worksheet, options: 
     }
   }
 
+  // Cells of one group share the smallest shrink factor so their fonts look identical.
+  const groupFactors = new Map<string, number>();
+  if (options.fontGroup) {
+    for (const { cell, box, isMaster } of cells) {
+      const runs = isMaster ? cellRuns(cell) : [];
+      const group = options.fontGroup(Number(cell.row), Number(cell.col));
+      if (!runs.length || !group) continue;
+      const factor = fitFactor(doc, cell, runs, box, fontScale);
+      groupFactors.set(group, Math.min(groupFactors.get(group) ?? 1, factor));
+    }
+  }
+
   for (const { cell, own } of cells) {
     const fill = cell.fill;
     const color = fill && fill.type === 'pattern' && fill.pattern === 'solid' ? resolveColor(fill.fgColor) : null;
@@ -239,7 +275,9 @@ export async function renderWorksheetPdf(worksheet: ExcelJS.Worksheet, options: 
   }
   for (const { cell, box, isMaster } of cells) {
     const runs = isMaster ? cellRuns(cell) : [];
-    if (runs.length) drawText(doc, cell, runs, box, scale);
+    if (!runs.length) continue;
+    const group = options.fontGroup?.(Number(cell.row), Number(cell.col));
+    drawText(doc, cell, runs, box, fontScale, group ? groupFactors.get(group) : undefined);
   }
   for (const { cell, own } of cells) drawBorders(doc, cell, own);
 

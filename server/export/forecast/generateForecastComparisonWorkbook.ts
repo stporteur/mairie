@@ -1,8 +1,9 @@
 import ExcelJS from 'exceljs';
 import type { ForecastComparisonExportRequest } from '../../../shared/types/forecast';
+import { isSupportedYear } from '../../../shared/vacations/supportedYears';
 import type { GeneratedWorkbook } from '../GeneratedWorkbook';
 
-const YEAR_COUNT = 10;
+const MAX_YEAR_COUNT = 50;
 const DARK = 'FF111827';
 const GROUP_SEPARATOR = { style: 'medium', color: { argb: 'FF9CA3AF' } } as const;
 const THIN = { style: 'thin', color: { argb: 'FF9CA3AF' } } as const;
@@ -14,14 +15,16 @@ function fill(argb: string) {
 export async function generateForecastComparisonWorkbook(
   request: ForecastComparisonExportRequest,
 ): Promise<GeneratedWorkbook> {
-  if (!Number.isInteger(request.startYear) || request.startYear < 2020 || request.startYear > 2050) {
+  if (!isSupportedYear(request.startYear)) {
     throw new Error('Année de départ invalide.');
   }
   if (!Array.isArray(request.profiles) || request.profiles.length === 0) {
     throw new Error('Sélectionnez au moins un profil à comparer.');
   }
+  const YEAR_COUNT = request.profiles[0].rows?.length;
   request.profiles.forEach((profile) => {
-    const valid = Array.isArray(profile.rows) && profile.rows.length === YEAR_COUNT && profile.rows.every((row, index) =>
+    const valid = Array.isArray(profile.rows) && profile.rows.length >= 1 && profile.rows.length <= MAX_YEAR_COUNT
+      && profile.rows.length === YEAR_COUNT && profile.rows.every((row, index) =>
       row.year === request.startYear + index && Number.isFinite(row.workHours) && Number.isFinite(row.hoursDue));
     if (!valid) throw new Error('Les lignes du comparatif sont invalides ou désordonnées.');
   });

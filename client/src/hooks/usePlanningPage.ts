@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { VacationPeriod, VacationSource } from '@shared/types/vacations';
 import { computeYearPlan } from '@/application/computeYearPlan';
 import { loadLeaveState } from '@/application/loadLeaveState';
-import { DEFAULT_YEAR } from '@/config/constants';
+import { currentYear } from '@/config/years';
 import { getAnnualWarnings, summarizeYear } from '@/domain/summary/annualSummary';
 import { groupByMonth, summarizeMonths } from '@/domain/summary/monthlySummary';
 import { toLeaveParameters } from '@/domain/settings/normalize';
@@ -23,7 +23,7 @@ const NO_TRAINING_HOURS: number[] = Array.from({ length: 12 }, () => 0);
 export function usePlanningPage(profiles: LeaveProfiles) {
   const services = useServices();
   const [initial] = useState(() => loadLeaveState(services.preferences));
-  const [year, setYear] = useState<number>(DEFAULT_YEAR);
+  const [year, setYear] = useState<number>(currentYear);
   const [vacations, setVacations] = useState<VacationPeriod[]>([]);
   const [vacationSource, setVacationSource] = useState<VacationSource | null>(null);
   const [appliedSettings, setAppliedSettings] = useState<LeaveSettings>(initial.appliedSettings);

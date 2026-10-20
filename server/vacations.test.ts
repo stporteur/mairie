@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildEstimatedVacationPeriods, computeVacationStatistics } from '../shared/vacations';
+import { buildEstimatedVacationPeriods, computeVacationStatistics, STATISTICS_FROM_YEAR } from '../shared/vacations';
 import type { HistoricalVacation } from '../shared/vacations';
 import {
   isSupportedVacationYear,
@@ -113,11 +113,11 @@ assert.ok(partialOfficial.vacations.some((period) => period.name.includes('Touss
 assert.ok(partialOfficial.vacations.some((period) => period.start === '2028-12-23' && period.estimated));
 assert.ok(partialOfficial.vacations.filter((period) => !period.estimated).length === 4);
 
-assert.equal(isSupportedVacationYear(2020), true);
-assert.equal(isSupportedVacationYear(2050), true);
-assert.equal(isSupportedVacationYear(2059), true);
-assert.equal(isSupportedVacationYear(2019), false);
-assert.equal(isSupportedVacationYear(2060), false);
-assert.equal(isSupportedVacationYear(2025.5), false);
+const thisYear = new Date().getFullYear();
+assert.equal(isSupportedVacationYear(STATISTICS_FROM_YEAR), true);
+assert.equal(isSupportedVacationYear(thisYear + 50), true);
+assert.equal(isSupportedVacationYear(STATISTICS_FROM_YEAR - 1), false);
+assert.equal(isSupportedVacationYear(thisYear + 51), false);
+assert.equal(isSupportedVacationYear(thisYear + 0.5), false);
 
 console.log('Vacation estimation tests passed.');

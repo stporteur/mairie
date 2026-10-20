@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ForecastSummaryRow } from '@shared/types/forecast';
 import { applyProfileToSettings } from '@/domain/settings/leaveProfiles';
-import { CUSTOM_PROFILE, type LeaveProfiles, type LeaveSettings, type SelectedLeaveProfile } from '@/domain/settings/types';
+import { CUSTOM_PROFILE, NO_PROFILE, type LeaveProfiles, type LeaveSettings, type SelectedLeaveProfile } from '@/domain/settings/types';
 import { createCalculateForecast } from '@/handlers/forecast/calculateForecast';
 import { createExportForecast } from '@/handlers/forecast/exportForecast';
 import { useLeaveSettingsForm } from './useLeaveSettingsForm';
@@ -9,12 +9,13 @@ import { useServices } from './useServices';
 
 interface ForecastPageOptions {
   startYear: number;
+  yearCount: number;
   profiles: LeaveProfiles;
   initialSettings: LeaveSettings;
   initialProfile: SelectedLeaveProfile;
 }
 
-export function useForecastPage({ startYear, profiles, initialSettings, initialProfile }: ForecastPageOptions) {
+export function useForecastPage({ startYear, yearCount, profiles, initialSettings, initialProfile }: ForecastPageOptions) {
   const services = useServices();
   const [rows, setRows] = useState<ForecastSummaryRow[]>([]);
   const [calculating, setCalculating] = useState(false);
@@ -31,6 +32,7 @@ export function useForecastPage({ startYear, profiles, initialSettings, initialP
 
   const calculateFor = (settings: LeaveSettings, profile: SelectedLeaveProfile) => createCalculateForecast({
     startYear,
+    yearCount,
     settings,
     profiles,
     profile,
@@ -41,6 +43,15 @@ export function useForecastPage({ startYear, profiles, initialSettings, initialP
     setError,
     services,
   });
+
+  // Previous results no longer match the requested period: drop them and rerun a catalog profile.
+  useEffect(() => {
+    setRows([]);
+    if (form.profile !== NO_PROFILE && form.profile !== CUSTOM_PROFILE) {
+      void calculateFor(form.settings, form.profile)();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startYear, yearCount]);
 
   const changeProfile = (selected: SelectedLeaveProfile): void => {
     form.changeProfile(selected);
@@ -62,6 +73,7 @@ export function useForecastPage({ startYear, profiles, initialSettings, initialP
 
   return {
     startYear,
+    yearCount,
     rows,
     calculating,
     progress,

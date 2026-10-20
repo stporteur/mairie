@@ -5,6 +5,7 @@ import type { GeneratedWorkbook } from '../GeneratedWorkbook';
 import { safeProfileName } from '../safeProfileName';
 
 const MONTH_START_ROWS = Array.from({ length: 12 }, (_, index) => 1 + index * 5);
+const ANNUAL_HOURS_LIMIT = 1607;
 const FIRST_DAY_COLUMN = 2; // B
 const LAST_DAY_COLUMN = 32; // AF
 
@@ -159,6 +160,8 @@ export async function generateCalendarWorkbook(
   const leaveTotalRows = MONTH_START_ROWS.map((row) => row + 3);
   const annualWorkTotal = [...daysByDate.values()].reduce((total, day) => total + day.effectiveHours, 0);
   const annualLeaveTotal = [...daysByDate.values()].filter((day) => day.isCp || day.isRtt).length;
+  const annualDueCell = worksheet.getCell('AL57');
+  annualDueCell.value = { formula: `${ANNUAL_HOURS_LIMIT}-AL58`, result: ANNUAL_HOURS_LIMIT - annualWorkTotal };
   const annualWorkCell = worksheet.getCell('AL58');
   const annualLeaveCell = worksheet.getCell('AL59');
   annualWorkCell.value = {

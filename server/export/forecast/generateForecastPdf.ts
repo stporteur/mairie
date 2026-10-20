@@ -12,7 +12,7 @@ export async function generateForecastPdf(request: ForecastExportRequest): Promi
     title: `Prévisionnel ${request.startYear} - ${request.profile}`,
     pageSize: A4_LANDSCAPE,
     columns: 6,
-    rows: 13,
+    rows: 3 + request.rows.length,
     maxScale: 1.5,
     centerVertically: false,
   });

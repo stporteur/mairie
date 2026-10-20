@@ -274,6 +274,7 @@ describe('forecast handlers', () => {
     const error = createState('');
     await createCalculateForecast({
       startYear: 2026,
+      yearCount: 10,
       settings: { ...settings, rttDays: '' },
       profiles: PROFILES,
       profile: 'custom',
@@ -288,12 +289,13 @@ describe('forecast handlers', () => {
     expect(fetchVacations).not.toHaveBeenCalled();
   });
 
-  it('calculates ten rows and resets the progress', async () => {
+  it('calculates the requested number of rows and resets the progress', async () => {
     const rows = createState<ForecastSummaryRow[]>([]);
     const calculating = createState(false);
     const progress = createState('');
     await createCalculateForecast({
       startYear: 2026,
+      yearCount: 5,
       settings,
       profiles: PROFILES,
       profile: 'atsem365',
@@ -312,12 +314,12 @@ describe('forecast handlers', () => {
         holidays,
       },
     })();
-    expect(rows.state.value).toHaveLength(10);
+    expect(rows.state.value).toHaveLength(5);
     expect(calculating.state.value).toBe(false);
     expect(progress.state.value).toBe('');
   });
 
-  it('exports the forecast only when ten rows are present', async () => {
+  it('exports the forecast only when rows are present', async () => {
     const exportForecast = jest.fn().mockResolvedValue(new Blob(['x']));
     const download = jest.fn();
     const base = {

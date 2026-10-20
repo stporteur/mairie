@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ForecastSummaryRow } from '@shared/types/forecast';
 import { computeForecast } from '@/application/computeForecast';
 import { applyProfileToSettings, getPlanning } from '@/domain/settings/leaveProfiles';
@@ -10,12 +10,13 @@ import { useServices } from './useServices';
 
 interface ForecastComparisonOptions {
   startYear: number;
+  yearCount: number;
   profiles: LeaveProfiles;
   /** Source of the values that profiles do not carry (CP). */
   settings: LeaveSettings;
 }
 
-export function useForecastComparison({ startYear, profiles, settings }: ForecastComparisonOptions) {
+export function useForecastComparison({ startYear, yearCount, profiles, settings }: ForecastComparisonOptions) {
   const services = useServices();
   const [selected, setSelected] = useState<string[]>([]);
   const [results, setResults] = useState<Record<string, ForecastSummaryRow[]>>({});
@@ -52,7 +53,7 @@ export function useForecastComparison({ startYear, profiles, settings }: Forecas
     setLoading((current) => [...current, key]);
     try {
       const parameters = toLeaveParameters(applyProfileToSettings(profiles, settings, key), getPlanning(profiles, key));
-      const rows = await computeForecast({ startYear, parameters }, services);
+      const rows = await computeForecast({ startYear, yearCount, parameters }, services);
       setResults((current) => ({ ...current, [key]: rows }));
     } catch (failure) {
       setSelected((current) => current.filter((item) => item !== key));
@@ -61,6 +62,13 @@ export function useForecastComparison({ startYear, profiles, settings }: Forecas
       setLoading((current) => current.filter((item) => item !== key));
     }
   };
+
+  // Results computed for another period are discarded and the selected profiles recomputed.
+  useEffect(() => {
+    setResults({});
+    selected.forEach((key) => void compute(key));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startYear, yearCount]);
 
   const toggleProfile = (key: string, checked: boolean): void => {
     setError('');
@@ -74,6 +82,7 @@ export function useForecastComparison({ startYear, profiles, settings }: Forecas
 
   return {
     startYear,
+    yearCount,
     profiles,
     cpDays: settings.cpDays,
     selected,

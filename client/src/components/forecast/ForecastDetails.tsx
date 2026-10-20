@@ -1,4 +1,3 @@
-import { FORECAST_YEAR_COUNT } from '@/config/constants';
 import { CUSTOM_PROFILE } from '@/domain/settings/types';
 import type { ForecastPageModel } from '@/hooks/useForecastPage';
 import Alert from '../common/Alert';
@@ -7,7 +6,7 @@ import LeaveSettingsPanel from '../common/LeaveSettingsPanel';
 import ForecastTable from './ForecastTable';
 
 function ForecastDetails({ model }: { model: ForecastPageModel }) {
-  const { startYear } = model;
+  const { startYear, yearCount } = model;
 
   return (
     <>
@@ -21,7 +20,7 @@ function ForecastDetails({ model }: { model: ForecastPageModel }) {
           onProfileChange={model.onProfileChange}
           onSettingChange={model.onSettingChange}
         >
-          <p className="help-text">Années calculées : {startYear}–{startYear + FORECAST_YEAR_COUNT - 1}. {model.profile === CUSTOM_PROFILE ? 'Les paramètres personnalisés s’appliquent après « Calculer ».' : 'Le choix d’un profil lance le calcul.'}</p>
+          <p className="help-text">Années calculées : {startYear}–{startYear + yearCount - 1}. {model.profile === CUSTOM_PROFILE ? 'Les paramètres personnalisés s’appliquent après « Calculer ».' : 'Le choix d’un profil lance le calcul.'}</p>
           {model.error ? <Alert role="alert">{model.error}</Alert> : null}
           {model.progress ? <p className="help-text" role="status">{model.progress}</p> : null}
           {model.profile === CUSTOM_PROFILE ? (
@@ -34,7 +33,7 @@ function ForecastDetails({ model }: { model: ForecastPageModel }) {
 
       {model.rows.length > 0 ? (
         <>
-          <ForecastTable startYear={startYear} yearCount={FORECAST_YEAR_COUNT} rows={model.rows} />
+          <ForecastTable startYear={startYear} yearCount={yearCount} rows={model.rows} />
           <ExportBar error="" exporting={model.exporting} disabled={model.exporting} label="Export Excel" onExport={model.onExport} secondary={{ label: 'Export PDF', onClick: model.onExportPdf }} />
         </>
       ) : null}

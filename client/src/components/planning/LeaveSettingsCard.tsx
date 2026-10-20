@@ -1,3 +1,4 @@
+import { maxSupportedYear, minSupportedYear } from '@/config/years';
 import Alert from '../common/Alert';
 import LeaveSettingsPanel from '../common/LeaveSettingsPanel';
 import { CUSTOM_PROFILE, type LeaveProfiles, LeaveSettingKey, LeaveSettings, SelectedLeaveProfile } from '@/domain/settings/types';
@@ -34,7 +35,7 @@ function LeaveSettingsCard({
       <div className="field-row">
         <label>
           Année
-          <input type="number" min="2020" max="2050" value={year} onChange={(event) => onYearChange(event.target.value)} />
+          <input type="number" min={minSupportedYear()} max={maxSupportedYear()} value={year} onChange={(event) => onYearChange(event.target.value)} />
         </label>
       </div>
       {isCustom ? <p className="help-text">Les paramètres personnalisés sont appliqués au calendrier après clic sur « Calculer ».</p> : null}

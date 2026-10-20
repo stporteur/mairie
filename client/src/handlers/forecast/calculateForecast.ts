@@ -9,6 +9,7 @@ import type { StateSetter } from '../types';
 
 export interface CalculateForecastDeps {
   startYear: number;
+  yearCount: number;
   settings: LeaveSettings;
   profiles: LeaveProfiles;
   profile: SelectedLeaveProfile;
@@ -34,6 +35,7 @@ export function createCalculateForecast(deps: CalculateForecastDeps) {
     try {
       const rows = await computeForecast({
         startYear: deps.startYear,
+        yearCount: deps.yearCount,
         parameters: toLeaveParameters(deps.settings, getPlanning(deps.profiles, deps.profile)),
         onProgress: (year, index, total) => deps.setProgress(`Calcul de ${year} (${index}/${total})…`),
       }, deps.services);

@@ -1,4 +1,3 @@
-import { FORECAST_YEAR_COUNT } from '@/config/constants';
 import type { ForecastComparisonModel } from '@/hooks/useForecastComparison';
 import Alert from '../common/Alert';
 import ExportBar from '../common/ExportBar';
@@ -6,7 +5,7 @@ import ForecastComparisonTable from './ForecastComparisonTable';
 import ForecastProfileCheckboxes from './ForecastProfileCheckboxes';
 
 function ForecastComparison({ model }: { model: ForecastComparisonModel }) {
-  const { startYear, profiles, selected, results } = model;
+  const { startYear, yearCount, profiles, selected, results } = model;
   const columns = profiles
     .filter((profile) => selected.includes(profile.key) && results[profile.key])
     .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
@@ -21,7 +20,7 @@ function ForecastComparison({ model }: { model: ForecastComparisonModel }) {
           selected={selected}
           onToggle={model.onToggleProfile}
         />
-        <p className="help-text">Années calculées : {startYear}–{startYear + FORECAST_YEAR_COUNT - 1}.</p>
+        <p className="help-text">Années calculées : {startYear}–{startYear + yearCount - 1}.</p>
         {model.error ? <Alert role="alert">{model.error}</Alert> : null}
         {model.loading ? <p className="help-text" role="status">Calcul en cours…</p> : null}
       </section>
@@ -30,7 +29,7 @@ function ForecastComparison({ model }: { model: ForecastComparisonModel }) {
         <>
           <ForecastComparisonTable
             startYear={startYear}
-            yearCount={FORECAST_YEAR_COUNT}
+            yearCount={yearCount}
             cpDays={model.cpDays}
             profiles={columns}
             results={results}
